@@ -12,6 +12,7 @@ use Inertia\Response;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Ingredient;
+use App\Models\Branch;
 use Illuminate\Support\Facades\Storage;
 class ProductController extends Controller
 {
@@ -80,7 +81,7 @@ $category = $request->input('category');
 
     $qty = $validated['pd_qty'] ?? 0;
     $validated['pd_status'] = $qty > 0 ? 'Available' : 'Not Available';
-
+    $validated['branch_id'] = $request->user()->branch_id;
     $product = Product::create($validated);
 
     // Sync ingredients

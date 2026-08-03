@@ -52,7 +52,8 @@ class IngredientController extends Controller
                 $imagePath = $request->file('ing_image')->store('ingredients', 'public');
                 $validatedData['ing_image'] = $imagePath;
             }
-            
+
+        $validatedData['branch_id'] = $request->user()->branch_id;
         Ingredient::create($validatedData);
         return redirect('/ingredient')->with('success', 'Ingredient created successfully!');
     }

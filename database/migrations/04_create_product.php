@@ -14,7 +14,7 @@ return new class extends Migration
       Schema::create('tbl_product', function (Blueprint $table) {
             $table->id('pd_id');
             $table->unsignedBigInteger('cat_id'); // ✅ MATCH
-
+            $table->foreignId('branch_id')->constrained('tbl_branch');
        
             $table->string('pd_name', 244)->default('');
             $table->text('pd_description')->nullable();

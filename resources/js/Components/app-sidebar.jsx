@@ -59,6 +59,16 @@ export function AppSidebar({ ...props }) {
                 icon: LayoutDashboardIcon,
             },
             {
+                title: "Customer",
+                url: route("customer.index"),
+                icon: LayoutGrid,
+            },
+            {
+                title: "Supplier",
+                url: route("supplier.index"),
+                icon: LayoutGrid,
+            },
+            {
                 title: "Table",
                 url: route("table.index"),
                 icon: LayoutGrid,
@@ -79,7 +89,7 @@ export function AppSidebar({ ...props }) {
                 icon: UtensilsCrossed,
             },
             {
-                title: "Menu",
+                title: "POS",
                 url: route("menu.index"),
                 icon: ClipboardList,
             },
@@ -87,6 +97,11 @@ export function AppSidebar({ ...props }) {
                 title: "Order History",
                 url: route("history.index"),
                 icon: History,
+            },
+            {
+                title: "Purchasing",
+                url: route("purchasing.index"),
+                icon: Database,
             },
         ],
         navClouds: [

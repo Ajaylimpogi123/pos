@@ -286,7 +286,7 @@ export default function Card({ children, ingredients }) {
                                             <div className="text-xs text-gray-500 uppercase tracking-wide">
                                                 All Stock
                                             </div>
-                                            <div className="text-sm font-semibold">
+                                            <div className="text-sm text-green-600 font-semibold">
                                                 {ingredient.ing_qty}{" "}
                                                 {ingredient.unit}
                                             </div>

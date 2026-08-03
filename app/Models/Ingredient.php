@@ -14,6 +14,7 @@ class Ingredient extends Model
     protected $primaryKey = 'ing_id';
     protected $fillable = [
         'ing_name',
+        'branch_id',
         'ing_qty',
         'ing_mqty',
         'ing_cost',

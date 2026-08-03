@@ -27,21 +27,23 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
 
     // Check for order data in props
     useEffect(() => {
-        // console.log("🔥 Checking for order data...");
-        // console.log("Props:", props);
-        // console.log("Flash:", props.flash);
-        
         // Check if order exists in flash
         if (props.flash?.order) {
             console.log("✅ Order found in flash:", props.flash.order);
             setLastOrder(props.flash.order);
             setShowSuccessModal(true);
-            
+
             // Auto-print after a short delay
             if (!hasAutoPrinted && props.flash.order.od_id) {
                 setTimeout(() => {
-                    console.log("🖨️ Auto-printing receipt for order:", props.flash.order.od_id);
-                    window.open(route('order.print', props.flash.order.od_id), '_blank');
+                    console.log(
+                        "🖨️ Auto-printing receipt for order:",
+                        props.flash.order.od_id,
+                    );
+                    window.open(
+                        route("order.print", props.flash.order.od_id),
+                        "_blank",
+                    );
                     setHasAutoPrinted(true);
                 }, 500);
             }
@@ -169,46 +171,50 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
             od_total_amt_due: amountDue,
             od_payment: payment,
             od_change: change,
-            items: cartItems.map(item => ({
-                pd_id: item.pd_id,
+            items: cartItems.map((item) => ({
+                // FIX: fall back to item.id when pd_id isn't present on the
+                // cart item — without this, pd_id could be undefined and
+                // fail backend validation ('items.*.pd_id' => 'required'),
+                // silently killing the order submission.
+                pd_id: item.pd_id || item.id,
                 ct_qty: item.ct_qty,
                 ct_price: Number(item.ct_price || item.pd_price),
-            }))
+            })),
         };
 
-        console.log("Submitting order data:", orderData);
-
-        router.post(
-            route("order.place", table_id),
-            orderData,
-            {
-                preserveScroll: true,
-                preserveState: false,
-                onSuccess: (response) => {
-                    console.log("Order placed successfully, response:", response);
-                    setIsPlacingOrder(false);
-                    
-                    // Show success toast
-                    toast.success("Order placed successfully!");
-                    
-                    // The page will reload and the useEffect will catch the flash data
-                },
-                onError: (errors) => {
-                    setIsPlacingOrder(false);
-                    console.error("Order errors:", errors);
-                    const errorMessage = Object.values(errors)[0] || "Failed to place order";
-                    toast.error(errorMessage);
-                },
-                onFinish: () => {
-                    setIsPlacingOrder(false);
-                },
-            }
+        console.log(
+            "Submitting order data:",
+            JSON.stringify(orderData, null, 2),
         );
+
+        router.post(route("order.place", table_id), orderData, {
+            preserveScroll: true,
+            preserveState: false,
+            onSuccess: (response) => {
+                console.log("Order placed successfully, response:", response);
+                setIsPlacingOrder(false);
+
+                // Show success toast
+                toast.success("Order placed successfully!");
+
+                // The page will reload and the useEffect will catch the flash data
+            },
+            onError: (errors) => {
+                setIsPlacingOrder(false);
+                console.error("Order errors:", errors);
+                const errorMessage =
+                    Object.values(errors)[0] || "Failed to place order";
+                toast.error(errorMessage);
+            },
+            onFinish: () => {
+                setIsPlacingOrder(false);
+            },
+        });
     };
 
     const handlePrintReceipt = () => {
         if (lastOrder && lastOrder.od_id) {
-            window.open(route('order.print', lastOrder.od_id), '_blank');
+            window.open(route("order.print", lastOrder.od_id), "_blank");
         } else {
             toast.error("No order to print");
         }
@@ -221,7 +227,10 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
 
     return (
         <>
-            <LoadingOverlay isVisible={isPlacingOrder} message="Processing your order..." />
+            <LoadingOverlay
+                isVisible={isPlacingOrder}
+                message="Processing your order..."
+            />
 
             {/* Success Modal */}
             {showSuccessModal && lastOrder && (
@@ -229,49 +238,73 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                     <div className="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl">
                         <div className="text-center mb-6">
                             <div className="inline-flex p-3 bg-green-100 rounded-full mb-4">
-                                <svg className="w-12 h-12 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                <svg
+                                    className="w-12 h-12 text-green-600"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                    />
                                 </svg>
                             </div>
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">
                                 Order Placed Successfully!
                             </h3>
                             <p className="text-gray-500">
-                                Invoice #{lastOrder.invoice_no || 'N/A'}
+                                Invoice #{lastOrder.invoice_no || "N/A"}
                             </p>
                             <p className="text-xs text-blue-500 mt-2">
-                                {hasAutoPrinted ? "Receipt printed" : "Receipt is printing automatically..."}
+                                {hasAutoPrinted
+                                    ? "Receipt printed"
+                                    : "Receipt is printing automatically..."}
                             </p>
                         </div>
-                        
+
                         <div className="bg-gray-50 rounded-xl p-4 mb-6">
                             <div className="flex justify-between mb-2">
                                 <span className="text-gray-600">Table:</span>
-                                <span className="font-bold">Table {lastOrder.table_number || tableNumber}</span>
+                                <span className="font-bold">
+                                    Table{" "}
+                                    {lastOrder.table_number || tableNumber}
+                                </span>
                             </div>
                             <div className="flex justify-between mb-2">
                                 <span className="text-gray-600">Payment:</span>
-                                <span className="font-bold capitalize">{lastOrder.payment_method || paymentMethod}</span>
+                                <span className="font-bold capitalize">
+                                    {lastOrder.payment_method || paymentMethod}
+                                </span>
                             </div>
                             <div className="flex justify-between mb-2">
                                 <span className="text-gray-600">Items:</span>
-                                <span className="font-bold">{lastOrder.items?.length || itemCount} items</span>
+                                <span className="font-bold">
+                                    {lastOrder.items?.length || itemCount} items
+                                </span>
                             </div>
                             <div className="flex justify-between pt-2 border-t">
                                 <span className="font-medium">Total:</span>
                                 <span className="text-xl font-bold text-green-600">
-                                    ₱{parseFloat(lastOrder.od_total_amt_due || amountDue).toFixed(2)}
+                                    ₱
+                                    {parseFloat(
+                                        lastOrder.od_total_amt_due || amountDue,
+                                    ).toFixed(2)}
                                 </span>
                             </div>
                         </div>
-                        
+
                         <div className="flex gap-3">
                             <Button
                                 onClick={handlePrintReceipt}
                                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3"
                             >
                                 <Printer className="w-4 h-4 mr-2" />
-                                {hasAutoPrinted ? "Print Again" : "Print Receipt"}
+                                {hasAutoPrinted
+                                    ? "Print Again"
+                                    : "Print Receipt"}
                             </Button>
                             <Button
                                 onClick={handleCloseSuccessModal}
@@ -311,15 +344,25 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                 </p>
                             ) : (
                                 cartItems.map((product) => {
-                                    const productId = product.pd_id || product.id;
-                                    const productName = product.pd_name || product.name;
-                                    const productImage = product.pd_image || product.image;
-                                    const productPrice = Number(product.pd_price || product.ct_price || 0);
+                                    const productId =
+                                        product.pd_id || product.id;
+                                    const productName =
+                                        product.pd_name || product.name;
+                                    const productImage =
+                                        product.pd_image || product.image;
+                                    const productPrice = Number(
+                                        product.pd_price ||
+                                            product.ct_price ||
+                                            0,
+                                    );
                                     const quantity = product.ct_qty || 1;
                                     const isLoading = loadingItem === productId;
 
                                     return (
-                                        <div key={productId} className="rounded-lg border p-4">
+                                        <div
+                                            key={productId}
+                                            className="rounded-lg border p-4"
+                                        >
                                             <div className="flex justify-between items-start mb-2">
                                                 {productImage && (
                                                     <div className="w-12 h-12 rounded-lg overflow-hidden">
@@ -337,7 +380,9 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-6 w-6 text-gray-400 hover:text-red-600"
-                                                    onClick={() => removeItem(productId)}
+                                                    onClick={() =>
+                                                        removeItem(productId)
+                                                    }
                                                     disabled={isLoading}
                                                 >
                                                     <X className="h-3 w-3" />
@@ -353,8 +398,16 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                                         variant="outline"
                                                         size="icon"
                                                         className="h-8 w-8 rounded-full"
-                                                        onClick={() => updateQuantity(productId, -1)}
-                                                        disabled={quantity <= 1 || isLoading}
+                                                        onClick={() =>
+                                                            updateQuantity(
+                                                                productId,
+                                                                -1,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            quantity <= 1 ||
+                                                            isLoading
+                                                        }
                                                     >
                                                         <Minus className="h-3 w-3" />
                                                     </Button>
@@ -365,14 +418,22 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                                         variant="outline"
                                                         size="icon"
                                                         className="h-8 w-8 rounded-full"
-                                                        onClick={() => updateQuantity(productId, 1)}
+                                                        onClick={() =>
+                                                            updateQuantity(
+                                                                productId,
+                                                                1,
+                                                            )
+                                                        }
                                                         disabled={isLoading}
                                                     >
                                                         <Plus className="h-3 w-3" />
                                                     </Button>
                                                 </div>
                                                 <span className="text-sm font-bold text-green-600">
-                                                    ₱{(productPrice * quantity).toFixed(2)}
+                                                    ₱
+                                                    {(
+                                                        productPrice * quantity
+                                                    ).toFixed(2)}
                                                 </span>
                                             </div>
                                         </div>
@@ -386,19 +447,31 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                             <div className="space-y-3 p-4 bg-gray-50 rounded-xl">
                                 <div className="flex justify-between">
                                     <span>Subtotal:</span>
-                                    <span className="font-bold">₱{subTotal.toFixed(2)}</span>
+                                    <span className="font-bold">
+                                        ₱{subTotal.toFixed(2)}
+                                    </span>
                                 </div>
-                                
+
                                 <div className="flex justify-between items-center">
                                     <span>Discount:</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-red-500">-₱{discount.toFixed(2)}</span>
+                                        <span className="text-red-500">
+                                            -₱{discount.toFixed(2)}
+                                        </span>
                                         <input
                                             type="number"
                                             min="0"
                                             max={subTotal}
-                                          
-                                            onChange={(e) => setDiscount(Math.min(Number(e.target.value) || 0, subTotal))}
+                                            onChange={(e) =>
+                                                setDiscount(
+                                                    Math.min(
+                                                        Number(
+                                                            e.target.value,
+                                                        ) || 0,
+                                                        subTotal,
+                                                    ),
+                                                )
+                                            }
                                             className="w-20 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
                                             placeholder="0"
                                             step="0.01"
@@ -407,7 +480,9 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                 </div>
 
                                 <div className="flex justify-between pt-3 pb-3 border-t border-b">
-                                    <span className="text-lg font-bold">Total Amount Due:</span>
+                                    <span className="text-lg font-bold">
+                                        Total Amount Due:
+                                    </span>
                                     <span className="text-lg font-bold text-green-600">
                                         ₱{amountDue.toFixed(2)}
                                     </span>
@@ -421,8 +496,13 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                                 <input
                                                     type="number"
                                                     min="0"
-                                                 
-                                                    onChange={(e) => setPayment(Number(e.target.value) || 0)}
+                                                    onChange={(e) =>
+                                                        setPayment(
+                                                            Number(
+                                                                e.target.value,
+                                                            ) || 0,
+                                                        )
+                                                    }
                                                     className="w-20 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
                                                     placeholder="0"
                                                     step="0.01"
@@ -431,7 +511,9 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                         </div>
 
                                         <div className="flex justify-between pt-3">
-                                            <span className="text-md font-bold">Change:</span>
+                                            <span className="text-md font-bold">
+                                                Change:
+                                            </span>
                                             <span className="text-md font-bold">
                                                 ₱{change.toFixed(2)}
                                             </span>
@@ -444,7 +526,9 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                         {/* Payment Methods */}
                         {cartItems.length > 0 && (
                             <div>
-                                <h4 className="font-medium mb-3">Payment Method</h4>
+                                <h4 className="font-medium mb-3">
+                                    Payment Method
+                                </h4>
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
                                         onClick={() => {
@@ -457,14 +541,24 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                                 : "border-gray-200 hover:bg-gray-50"
                                         }`}
                                     >
-                                        <Banknote className={`w-6 h-6 mx-auto mb-2 ${
-                                            paymentMethod === "cash" ? "text-green-600" : "text-gray-600"
-                                        }`} />
-                                        <span className={`font-medium ${
-                                            paymentMethod === "cash" ? "text-green-700" : "text-gray-700"
-                                        }`}>Cash</span>
+                                        <Banknote
+                                            className={`w-6 h-6 mx-auto mb-2 ${
+                                                paymentMethod === "cash"
+                                                    ? "text-green-600"
+                                                    : "text-gray-600"
+                                            }`}
+                                        />
+                                        <span
+                                            className={`font-medium ${
+                                                paymentMethod === "cash"
+                                                    ? "text-green-700"
+                                                    : "text-gray-700"
+                                            }`}
+                                        >
+                                            Cash
+                                        </span>
                                     </button>
-                                    
+
                                     <button
                                         onClick={() => {
                                             setPaymentMethod("gcash");
@@ -476,12 +570,22 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                                 : "border-gray-200 hover:bg-gray-50"
                                         }`}
                                     >
-                                        <Smartphone className={`w-6 h-6 mx-auto mb-2 ${
-                                            paymentMethod === "gcash" ? "text-blue-600" : "text-gray-600"
-                                        }`} />
-                                        <span className={`font-medium ${
-                                            paymentMethod === "gcash" ? "text-blue-700" : "text-gray-700"
-                                        }`}>GCash</span>
+                                        <Smartphone
+                                            className={`w-6 h-6 mx-auto mb-2 ${
+                                                paymentMethod === "gcash"
+                                                    ? "text-blue-600"
+                                                    : "text-gray-600"
+                                            }`}
+                                        />
+                                        <span
+                                            className={`font-medium ${
+                                                paymentMethod === "gcash"
+                                                    ? "text-blue-700"
+                                                    : "text-gray-700"
+                                            }`}
+                                        >
+                                            GCash
+                                        </span>
                                     </button>
                                 </div>
                             </div>
@@ -490,8 +594,11 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                         {/* Place Order Button */}
                         <Button
                             className="w-full bg-green-600 hover:bg-green-700 h-12 text-base rounded-full"
-                            disabled={cartItems.length === 0 || isPlacingOrder
-                                || (paymentMethod === "cash" && payment < amountDue)
+                            disabled={
+                                cartItems.length === 0 ||
+                                isPlacingOrder ||
+                                (paymentMethod === "cash" &&
+                                    payment < amountDue)
                             }
                             onClick={handlePlaceOrder}
                         >
@@ -507,11 +614,16 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                             )}
                         </Button>
 
-                        {cartItems.length > 0 && paymentMethod === "cash" && payment < amountDue && payment > 0 && (
-                            <p className="text-xs text-red-500 text-center mt-2">
-                                Payment amount is less than total. Customer still owes ₱{(amountDue - payment).toFixed(2)}
-                            </p>
-                        )}
+                        {cartItems.length > 0 &&
+                            paymentMethod === "cash" &&
+                            payment < amountDue &&
+                            payment > 0 && (
+                                <p className="text-xs text-red-500 text-center mt-2">
+                                    Payment amount is less than total. Customer
+                                    still owes ₱
+                                    {(amountDue - payment).toFixed(2)}
+                                </p>
+                            )}
                     </div>
                 </CardContent>
             </Card>

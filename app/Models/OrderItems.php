@@ -28,5 +28,11 @@ class OrderItems extends Model
     {
         return $this->belongsTo(Product::class, 'pd_id', 'pd_id');
     }
+        public function ingredients()
+    {
+        // Snapshot of ingredients (and quantities) consumed for this
+        // specific order item, recorded at the time the order was placed.
+        return $this->hasMany(OrderItemIngredient::class, 'oid_id', 'oid_id');
+    }
 
 }

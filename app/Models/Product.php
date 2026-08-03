@@ -14,6 +14,7 @@ class Product extends Model
     protected $primaryKey = 'pd_id';
     protected $fillable = [
         'cat_id',
+        'branch_id',
         'pd_name',
         'pd_description',
         'pd_price',
@@ -29,6 +30,10 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class, 'cat_id', 'cat_id');
+    }
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class, 'branch_id', 'id');
     }
     public function carts()
     {

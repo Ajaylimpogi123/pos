@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id('cust_id');
             $table->string('cust_fname')->nullable();
             $table->string('cust_lname')->nullable();
-            $table->integer('cust_contact')->nullable();
+            $table->string('cust_contact')->nullable();
             $table->string('cust_image')->nullable();
             $table->timestamps();
             $table->softDeletes();

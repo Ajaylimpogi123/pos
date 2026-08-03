@@ -15,7 +15,7 @@ return new class extends Migration
       Schema::create('tbl_ingredient', function (Blueprint $table) {
         $table->id('ing_id');
     
-
+       $table->foreignId('branch_id')->constrained('tbl_branch');
      
          $table->string('ing_name', 244)->default('');
            $table->bigInteger('ing_qty')->default(0);
