@@ -19,11 +19,10 @@ class OrderItems extends Model
         'oi_price',
     ];
 
-        public function orders()
-    {
-        return $this->belongs(Order::class, 'od_id', 'od_id');
-    }
-
+public function orders()
+{
+    return $this->belongsTo(Order::class, 'od_id', 'od_id');
+}
     public function products()
     {
         return $this->belongsTo(Product::class, 'pd_id', 'pd_id');

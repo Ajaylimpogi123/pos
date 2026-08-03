@@ -78,8 +78,8 @@ export default function Index({ users, filters }) {
         <AuthenticatedLayout>
             <Head title="Contact Page" />
 
-            <div className="py-8 z-10 relative">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="relative z-10 py-8">
+                <div className="flex-1 space-y-6 p-4 md:p-6">
                     {/* Header Section */}
                     <div className="mb-8">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

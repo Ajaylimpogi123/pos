@@ -14,13 +14,16 @@ export default function Index({ orders }) {
             od_id: order.od_id,
             invoice_no: order.invoice_no,
             created_at: order.created_at,
-            cust_fullname: order.customer?.cust_fname ?? '' + order.customer?.cust_lname ?? '',
+            cust_fullname:
+                order.customer?.cust_fname ??
+                "" + order.customer?.cust_lname ??
+                "",
             table_number: order.table_number,
             od_total_amt_due: order.od_total_amt_due,
             payment_method: order.payment_method,
         })) || [];
 
-// console.log("data", orderData);
+    // console.log("data", orderData);
 
     // const handleDelete = (table_id) => {
     //     if (confirm("Are you sure you want to delete this table?")) {
@@ -38,7 +41,7 @@ export default function Index({ orders }) {
             <Head title="Contact Page" />
 
             <div className="relative z-10 py-8">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="flex-1 space-y-6 p-4 md:p-6">
                     {/* Header Section */}
                     <div className="mb-8">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

@@ -17,6 +17,7 @@ return new class extends Migration {
 
      
             $table->bigInteger('ct_qty')->default(1); // ✅ FIXED
+            $table->integer('ct_printed_qty')->default(0); // ✅ FIXED
             $table->decimal('ct_price', 9, 2)->default(0.00);
 
             $table->timestamp('ct_date')->nullable();

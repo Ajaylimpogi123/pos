@@ -7,6 +7,8 @@ import { router, usePage } from "@inertiajs/react";
 import { toast } from "sonner";
 import { Banknote, Smartphone } from "lucide-react";
 import LoadingOverlay from "../../Order/Component/LoadingOverlay";
+import CheckoutModal from "./CheckoutModal";
+// ...
 
 export default function CartSummary({ products = [], tableNumber, table_id }) {
     const { props } = usePage();
@@ -19,6 +21,9 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
     const [discount, setDiscount] = useState(0);
     const [payment, setPayment] = useState(0);
     const [hasAutoPrinted, setHasAutoPrinted] = useState(false);
+
+    const [checkoutOpen, setCheckoutOpen] = useState(false);
+    const [isPrintingKitchen, setIsPrintingKitchen] = useState(false);
 
     // Update local state when props change
     useEffect(() => {
@@ -191,13 +196,9 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
             preserveScroll: true,
             preserveState: false,
             onSuccess: (response) => {
-                console.log("Order placed successfully, response:", response);
                 setIsPlacingOrder(false);
-
-                // Show success toast
+                setCheckoutOpen(false); // add this line
                 toast.success("Order placed successfully!");
-
-                // The page will reload and the useEffect will catch the flash data
             },
             onError: (errors) => {
                 setIsPlacingOrder(false);
@@ -210,6 +211,39 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                 setIsPlacingOrder(false);
             },
         });
+    };
+
+    const handlePrintKitchen = () => {
+        if (!table_id) {
+            toast.error("No table selected");
+            return;
+        }
+
+        setIsPrintingKitchen(true);
+
+        router.post(
+            route("order.printKitchen", table_id),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: (page) => {
+                    const flash = page.props.flash;
+                    if (flash?.error) {
+                        toast.error(flash.error, { duration: 6000 });
+                    } else if (flash?.success) {
+                        toast.success(flash.success);
+                    }
+                },
+                onError: (errors) => {
+                    const msg =
+                        Object.values(errors)[0] ||
+                        "Failed to print kitchen ticket";
+                    toast.error(msg);
+                },
+                onFinish: () => setIsPrintingKitchen(false),
+            },
+        );
     };
 
     const handlePrintReceipt = () => {
@@ -227,9 +261,24 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
 
     return (
         <>
-            <LoadingOverlay
-                isVisible={isPlacingOrder}
-                message="Processing your order..."
+            <CheckoutModal
+                isOpen={checkoutOpen}
+                onClose={() => setCheckoutOpen(false)}
+                cartItems={cartItems}
+                tableNumber={tableNumber}
+                subTotal={subTotal}
+                discount={discount}
+                setDiscount={setDiscount}
+                amountDue={amountDue}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+                payment={payment}
+                setPayment={setPayment}
+                change={change}
+                onConfirm={handlePlaceOrder}
+                isPlacingOrder={isPlacingOrder}
+                onPrintKitchen={handlePrintKitchen}
+                isPrintingKitchen={isPrintingKitchen}
             />
 
             {/* Success Modal */}
@@ -592,26 +641,15 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                         )}
 
                         {/* Place Order Button */}
+                        {/* Checkout Button */}
                         <Button
                             className="w-full bg-green-600 hover:bg-green-700 h-12 text-base rounded-full"
-                            disabled={
-                                cartItems.length === 0 ||
-                                isPlacingOrder ||
-                                (paymentMethod === "cash" &&
-                                    payment < amountDue)
-                            }
-                            onClick={handlePlaceOrder}
+                            disabled={cartItems.length === 0}
+                            onClick={() => setCheckoutOpen(true)}
                         >
-                            {isPlacingOrder ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>Processing...</span>
-                                </div>
-                            ) : cartItems.length === 0 ? (
-                                "Cart is Empty"
-                            ) : (
-                                `Place Order (₱${amountDue.toFixed(2)})`
-                            )}
+                            {cartItems.length === 0
+                                ? "Cart is Empty"
+                                : `Checkout (₱${amountDue.toFixed(2)})`}
                         </Button>
 
                         {cartItems.length > 0 &&

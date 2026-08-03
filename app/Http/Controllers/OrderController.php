@@ -157,6 +157,7 @@ class OrderController extends Controller
 
             // {Pinter logic here} - This is where you would send the order to the printer if needed.
             app(\App\Services\ReceiptPrinterService::class)->printReceipt($order);
+            
 
             // Redirect back to menu page with flash data
             return redirect()->route('menu.menu', $table_id)
@@ -199,4 +200,160 @@ class OrderController extends Controller
                 ->with('error', 'Failed to load receipt');
         }
     }
+
+/**
+ * Print only what hasn't been sent to the kitchen yet for this table's
+ * cart. Works identically whether this is the first click for a fresh
+ * order or the Nth click after several rounds of additions — it always
+ * diffs ct_qty against ct_printed_qty per row and only prints, then
+ * marks, whatever's still outstanding.
+ */
+/**
+ * Print only what hasn't been sent to the kitchen yet for this table's
+ * cart. Diffs ct_qty against ct_printed_qty per row, prints the
+ * outstanding amount, then marks it printed. Every failure mode is
+ * caught and reported distinctly so staff know exactly what to check.
+ */
+public function printKitchen(Request $request, $table_id)
+{
+    // 1. Table must exist
+    $table = Table::find($table_id);
+    if (!$table) {
+        Log::warning('Print kitchen attempted for missing table', ['table_id' => $table_id]);
+        return redirect()->back()->with('error', 'Table not found.');
+    }
+
+    // 2. Load cart — fail loudly if the query itself breaks (bad DB
+    //    connection, etc.) rather than letting it bubble to a 500
+    try {
+        $cartRows = Cart::where('table_id', $table_id)
+            ->with('product:pd_id,pd_name,cat_id')
+            ->get();
+    } catch (\Exception $e) {
+        Log::error('Failed to load cart for kitchen print: ' . $e->getMessage(), [
+            'table_id' => $table_id,
+        ]);
+        return redirect()->back()->with('error', 'Could not load cart items. Please try again.');
+    }
+
+    if ($cartRows->isEmpty()) {
+        return redirect()->back()->with('error', 'Cart is empty — nothing to print.');
+    }
+
+    // 3. Build the unprinted diff, flagging rows with missing product
+    //    data instead of silently dropping them
+    $newItems = [];
+    $ctIdsToMark = [];
+    $skipped = [];
+
+    foreach ($cartRows as $row) {
+        $unprinted = $row->ct_qty - $row->ct_printed_qty;
+
+        if ($unprinted <= 0) {
+            continue;
+        }
+
+        if (!$row->product) {
+            // Product was deleted/unlinked after being added to cart —
+            // don't silently skip this without telling anyone
+            $skipped[] = $row->ct_id;
+            Log::warning('Cart row has no linked product, skipped from kitchen print', [
+                'ct_id' => $row->ct_id,
+                'pd_id' => $row->pd_id,
+            ]);
+            continue;
+        }
+
+        $newItems[] = [
+            'pd_id'   => $row->pd_id,
+            'pd_name' => $row->product->pd_name,
+            'ct_qty'  => $unprinted,
+            'cat_id'  => $row->product->cat_id,
+        ];
+        $ctIdsToMark[] = $row->ct_id;
+    }
+
+    if (empty($newItems)) {
+        $msg = !empty($skipped)
+            ? 'No new items to print (some items are missing product data — check logs).'
+            : 'No new items to print.';
+        return redirect()->back()->with('error', $msg);
+    }
+
+    // 4. Attempt the print — catch printer-layer exceptions separately
+    //    from everything else, since this is the step most likely to
+    //    fail in the field (printer off, wrong IP, network down)
+    try {
+        $results = app(\App\Services\ReceiptPrinterService::class)
+            ->printKitchenPreview($newItems, $table->t_number, true);
+    } catch (\Exception $e) {
+        Log::error('Printer service threw an exception: ' . $e->getMessage(), [
+            'table_id' => $table_id,
+            'items' => $newItems,
+        ]);
+        return redirect()->back()->with('error', 'Printer error: ' . $e->getMessage());
+    }
+
+    // 5. Inspect per-printer results — with category routing, some
+    //    printers can succeed while others fail (e.g. kitchen printer
+    //    reachable, bar printer off). Report exactly which failed.
+    $failedPrinters = array_keys(array_filter($results, fn($ok) => $ok === false));
+    $succeededPrinters = array_keys(array_filter($results, fn($ok) => $ok === true));
+
+    if (empty($succeededPrinters)) {
+        Log::error('All configured printers failed for kitchen print', [
+            'table_id' => $table_id,
+            'attempted_printers' => array_keys($results),
+        ]);
+        return redirect()->back()->with(
+            'error',
+            'Could not reach any printer (' . implode(', ', array_keys($results)) . '). Check that it is powered on and connected to the network.'
+        );
+    }
+
+    // 6. Only mark items as printed if their specific target printer
+    //    actually succeeded — otherwise a failed bar ticket would get
+    //    silently marked "printed" just because the kitchen ticket worked
+    $routing = config('printer.category_routing', []);
+    $ctIdsActuallyPrinted = [];
+
+    foreach ($cartRows as $row) {
+        if (!in_array($row->ct_id, $ctIdsToMark, true)) {
+            continue;
+        }
+        $target = $routing[$row->product?->cat_id ?? null] ?? 'kitchen';
+        if (in_array($target, $succeededPrinters, true)) {
+            $ctIdsActuallyPrinted[] = $row->ct_id;
+        }
+    }
+
+    // 7. Persist via query builder (bypasses Eloquent mass-assignment
+    //    protection) — wrapped so a DB failure here is reported clearly
+    //    rather than silently leaving printed_qty stale after a real print
+    if (!empty($ctIdsActuallyPrinted)) {
+        try {
+            DB::table('tbl_cart')
+                ->whereIn('ct_id', $ctIdsActuallyPrinted)
+                ->update(['ct_printed_qty' => DB::raw('ct_qty')]);
+        } catch (\Exception $e) {
+            Log::error('Printed successfully but failed to update ct_printed_qty: ' . $e->getMessage(), [
+                'ct_ids' => $ctIdsActuallyPrinted,
+            ]);
+            return redirect()->back()->with(
+                'error',
+                'Ticket printed, but failed to update tracking — the same items may print again next time. Contact support.'
+            );
+        }
+    }
+
+    if (!empty($failedPrinters)) {
+        return redirect()->back()->with(
+            'error',
+            'Printed to ' . implode(', ', $succeededPrinters) . ', but ' . implode(', ', $failedPrinters) . ' failed. Those items were not marked as sent.'
+        );
+    }
+
+    return redirect()->back()->with('success', 'Kitchen ticket sent to printer.');
 }
+}
+

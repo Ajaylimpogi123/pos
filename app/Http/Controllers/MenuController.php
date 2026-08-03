@@ -72,18 +72,19 @@ class MenuController extends Controller
             ->orderBy('pd_name', 'asc')
             ->get();
     
-        $cartItems = Cart::where('table_id', $table_id)
-            ->with('product:pd_id,pd_name,pd_price,pd_image')
-            ->get()
-            ->map(fn($cart) => [
-                'pd_id' => $cart->pd_id,
-                'cat_id' => $cart->cat_id,
-                'ct_id' => $cart->ct_id,
-                'pd_name' => $cart->product?->pd_name,
-                'pd_price' => $cart->product?->pd_price ?? 0,
-                'ct_qty' => $cart->ct_qty,
-                'pd_image' => $cart->product?->pd_image,
-            ]);
+    $cartItems = Cart::where('table_id', $table_id)
+    ->with('product:pd_id,pd_name,pd_price,pd_image,cat_id')
+    ->get()
+    ->map(fn($cart) => [
+        'pd_id' => $cart->pd_id,
+        'cat_id' => $cart->product?->cat_id,
+        'ct_id' => $cart->ct_id,
+        'pd_name' => $cart->product?->pd_name,
+        'pd_price' => $cart->product?->pd_price ?? 0,
+        'ct_qty' => $cart->ct_qty,
+        'ct_printed_qty' => $cart->ct_printed_qty,
+        'pd_image' => $cart->product?->pd_image,
+    ]);
     
         return Inertia::render('Menu/Menu', [
             'tables' => $tables,
@@ -101,32 +102,29 @@ class MenuController extends Controller
         ]);
     }
 
-    public function store($table_id, Request $request): RedirectResponse
-    {
-        $validatedData = $request->validate([
-            'pd_id'    => 'required|integer',
-            'table_id' => 'required|integer',
-            'table_number' => 'required|integer',
-            'ct_qty'   => 'required|numeric|min:1',
-            'ct_price' => 'required|numeric',
-        ]);
-    
-       
-            $cart = Cart::where('pd_id', $validatedData['pd_id'])
-                        ->where('table_id', $validatedData['table_id'])
-                        ->first();
-    
-            if ($cart) {
-                $cart->increment('ct_qty', $validatedData['ct_qty']);
-            } else {
-                Cart::create($validatedData);
-            }
-    
-            return redirect()->route('menu.menu', ['table_id' => $table_id]) // ✅ redirect to same page
-                             ->with('success', 'Item added to cart.');
-    
-      
+   public function store($table_id, Request $request): RedirectResponse
+{
+    $validatedData = $request->validate([
+        'pd_id'    => 'required|integer',
+        'table_id' => 'required|integer',
+        'table_number' => 'required|integer',
+        'ct_qty'   => 'required|numeric|min:1',
+        'ct_price' => 'required|numeric',
+    ]);
+
+    $cart = Cart::where('pd_id', $validatedData['pd_id'])
+                ->where('table_id', $validatedData['table_id'])
+                ->first();
+
+    if ($cart) {
+        $cart->increment('ct_qty', $validatedData['ct_qty']);
+    } else {
+        Cart::create($validatedData);
     }
+
+    return redirect()->route('menu.menu', ['table_id' => $table_id])
+                     ->with('success', 'Item added to cart.');
+}
 
 public function destroy($table_id, $cart)
 {

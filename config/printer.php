@@ -13,16 +13,16 @@ return [
             'method' => env('PRINTER_CASHIER_METHOD', 'network'),
             'com_port' => env('PRINTER_CASHIER_COM_PORT', 'COM3'),
             'com_baud' => env('PRINTER_CASHIER_BAUD', 9600),
-            'network_ip' => env('PRINTER_CASHIER_IP', '192.168.1.100'),
+            'network_ip' => env('PRINTER_CASHIER_IP', '192.168.1.10'),
             'network_port' => env('PRINTER_CASHIER_PORT', 9100),
         ],
 
         'kitchen' => [
-            'enabled' => env('PRINTER_KITCHEN_ENABLED', false),
+            'enabled' => env('PRINTER_KITCHEN_ENABLED', true),
             'method' => env('PRINTER_KITCHEN_METHOD', 'network'),
             'com_port' => env('PRINTER_KITCHEN_COM_PORT', 'COM4'),
             'com_baud' => env('PRINTER_KITCHEN_BAUD', 9600),
-            'network_ip' => env('PRINTER_KITCHEN_IP', '192.168.1.101'),
+            'network_ip' => env('PRINTER_KITCHEN_IP', '192.168.1.3'),
             'network_port' => env('PRINTER_KITCHEN_PORT', 9100),
         ],
 

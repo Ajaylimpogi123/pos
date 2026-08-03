@@ -5,13 +5,12 @@ import React from "react";
 import CardTable from "./Partials/CardTable";
 
 export default function Index({ tables, table_ids, table_item_counts }) {
-
     return (
         <AuthenticatedLayout>
             <Head title="Contact Page" />
 
             <div className="relative z-10 py-8">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="flex-1 space-y-6 p-4 md:p-6">
                     {/* Header Section */}
                     <div className="mb-8">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -26,7 +25,11 @@ export default function Index({ tables, table_ids, table_item_counts }) {
                         </div>
                     </div>
                     {/* { Content CartTable} */}
-                    <CardTable tables={tables} table_ids={table_ids} table_item_counts={table_item_counts} />
+                    <CardTable
+                        tables={tables}
+                        table_ids={table_ids}
+                        table_item_counts={table_item_counts}
+                    />
                 </div>
             </div>
         </AuthenticatedLayout>

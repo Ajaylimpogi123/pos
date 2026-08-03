@@ -20,7 +20,7 @@ class Customer extends Model
     ];
 
         public function orders()
-    {
-        return $this->hasMany(Order::class, 'od_id', 'od_id');
-    }
+{
+    return $this->hasMany(Order::class, 'cust_id', 'cust_id');
+}
 }
