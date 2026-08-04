@@ -15,7 +15,7 @@ export default function CategoryItems({
     products = [],
     tables,
     cartItems = [],
-    filters
+    filters,
 }) {
     const [activeCategory, setActiveCategory] = useState("all");
     const [loadingItem, setLoadingItem] = useState(null);
@@ -36,9 +36,12 @@ export default function CategoryItems({
         pd_qty: product.pd_qty,
     }));
 
-    const filteredItems = activeCategory === "all" 
-        ? foodItems 
-        : foodItems.filter((item) => Number(item.cat_id) === Number(activeCategory));
+    const filteredItems =
+        activeCategory === "all"
+            ? foodItems
+            : foodItems.filter(
+                  (item) => Number(item.cat_id) === Number(activeCategory),
+              );
 
     const totalItems = categories.reduce(
         (total, category) => total + (category.products?.length || 0),
@@ -52,7 +55,7 @@ export default function CategoryItems({
 
     // Update quantity for a product
     const updateQuantity = (productId, change) => {
-        setQuantities(prev => {
+        setQuantities((prev) => {
             const currentQty = prev[productId] || 1;
             const newQty = Math.max(1, currentQty + change);
             return { ...prev, [productId]: newQty };
@@ -85,17 +88,23 @@ export default function CategoryItems({
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
-                    toast.success(`${quantity} x ${product.pd_name} added to cart!`, {
-                        duration: 3000,
-                        position: "top-center",
-                        icon: <CircleCheck className="w-5 h-5 text-green-600" />,
-                    });
+                    toast.success(
+                        `${quantity} x ${product.pd_name} added to cart!`,
+                        {
+                            duration: 3000,
+                            position: "top-center",
+                            icon: (
+                                <CircleCheck className="w-5 h-5 text-green-600" />
+                            ),
+                        },
+                    );
                     // Reset quantity to 1 after adding
-                    setQuantities(prev => ({ ...prev, [product.pd_id]: 1 }));
+                    setQuantities((prev) => ({ ...prev, [product.pd_id]: 1 }));
                     setLoadingItem(null);
                 },
                 onError: (errors) => {
-                    const errorMessage = Object.values(errors)[0] || "Failed to add item";
+                    const errorMessage =
+                        Object.values(errors)[0] || "Failed to add item";
                     toast.error(errorMessage, {
                         duration: 4000,
                         position: "top-center",
@@ -129,7 +138,9 @@ export default function CategoryItems({
     return (
         <>
             <Field>
-                <FieldLabel htmlFor="input-button-group" className="text-white">Search</FieldLabel>
+                <FieldLabel htmlFor="input-button-group" className="text-white">
+                    Search
+                </FieldLabel>
                 <ButtonGroup className="w-full">
                     <Input
                         value={data.search}
@@ -179,7 +190,9 @@ export default function CategoryItems({
                                 </span>
                                 <span
                                     className={`mt-0.5 sm:mt-1 text-xs ${
-                                        activeCategory === "all" ? "text-gray-700" : "text-gray-600"
+                                        activeCategory === "all"
+                                            ? "text-gray-700"
+                                            : "text-gray-600"
                                     }`}
                                 >
                                     {totalItems}
@@ -189,7 +202,9 @@ export default function CategoryItems({
                             {categories.map((category) => (
                                 <button
                                     key={category.cat_id}
-                                    onClick={() => setActiveCategory(category.cat_id)}
+                                    onClick={() =>
+                                        setActiveCategory(category.cat_id)
+                                    }
                                     className={`flex-shrink-0 flex flex-col items-center rounded-lg transition-all duration-300
                                         w-28 sm:w-28 sm:p-2 md:w-36 md:p-2 mt-4 mr-1
                                         ${
@@ -218,11 +233,15 @@ export default function CategoryItems({
                                     </span>
                                     <span
                                         className={`mt-0.5 sm:mt-1 text-xs ${
-                                            activeCategory === category.cat_id ? "text-gray-700" : "text-gray-600"
+                                            activeCategory === category.cat_id
+                                                ? "text-gray-700"
+                                                : "text-gray-600"
                                         }`}
                                     >
                                         {category.products?.length || 0}{" "}
-                                        {category.products?.length === 1 ? "item" : "items"}
+                                        {category.products?.length === 1
+                                            ? "item"
+                                            : "items"}
                                     </span>
                                 </button>
                             ))}
@@ -238,7 +257,8 @@ export default function CategoryItems({
                     const displayStatus = isInvalidItem
                         ? "Not Available"
                         : item.pd_status || "Out of Stock";
-                    const isAvailable = !isInvalidItem && item.pd_status === "Available";
+                    const isAvailable =
+                        !isInvalidItem && item.pd_status === "Available";
                     const isLoading = loadingItem === item.pd_id;
                     const quantity = getQuantity(item.pd_id);
 
@@ -305,80 +325,115 @@ export default function CategoryItems({
                                     </span>
                                 </div>
 
-                            {/* Quantity Selector */}
-{isAvailable && !isInvalidItem && item.pd_qty > 0 && (
-    <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                <span>Quantity</span>
-                <span className="text-xs text-gray-400">(Max: {item.pd_qty})</span>
-            </label>
-            {/* <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                                {/* Quantity Selector */}
+                                {isAvailable &&
+                                    !isInvalidItem &&
+                                    item.pd_qty > 0 && (
+                                        <div className="mb-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                                                    <span>Quantity</span>
+                                                    <span className="text-xs text-gray-400">
+                                                        (Max: {item.pd_qty})
+                                                    </span>
+                                                </label>
+                                                {/* <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
                 In Stock
             </span> */}
-        </div>
-        
-        <div className="flex items-center gap-2">
-            <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7 rounded-full border-2  hover:border-green-500 hover:bg-green-100 transition-all duration-200 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:border-gray-200"
-                onClick={() => updateQuantity(item.pd_id, -1)}
-                disabled={quantity <= 1 || isLoading}
-            >
-                <Minus className={`h-4 w-4 ${quantity <= 1 ? 'text-gray-300' : 'text-gray-600'}`} />
-            </Button>
+                                            </div>
 
-            <div className="relative flex-1">
-                <input
-                    type="number"
-                    min="1"
-                    max={item.pd_qty}
-                    value={quantity}
-                    onChange={(e) => {
-                        const val = parseInt(e.target.value) || 1;
-                        const newQty = Math.min(val, item.pd_qty);
-                        setQuantities(prev => ({
-                            ...prev,
-                            [item.pd_id]: newQty
-                        }));
-                    }}
-                    className="w-full h-7 text-center border-2 rounded-xl py-2 px-3 text-base font-semibold 
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full border-2  hover:border-green-500 hover:bg-green-100 transition-all duration-200 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:border-gray-200"
+                                                    onClick={() =>
+                                                        updateQuantity(
+                                                            item.pd_id,
+                                                            -1,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        quantity <= 1 ||
+                                                        isLoading
+                                                    }
+                                                >
+                                                    <Minus
+                                                        className={`h-4 w-4 ${quantity <= 1 ? "text-gray-300" : "text-gray-600"}`}
+                                                    />
+                                                </Button>
+
+                                                <div className="relative flex-1">
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max={item.pd_qty}
+                                                        value={quantity}
+                                                        onChange={(e) => {
+                                                            const val =
+                                                                parseInt(
+                                                                    e.target
+                                                                        .value,
+                                                                ) || 1;
+                                                            const newQty =
+                                                                Math.min(
+                                                                    val,
+                                                                    item.pd_qty,
+                                                                );
+                                                            setQuantities(
+                                                                (prev) => ({
+                                                                    ...prev,
+                                                                    [item.pd_id]:
+                                                                        newQty,
+                                                                }),
+                                                            );
+                                                        }}
+                                                        className="w-full h-7 text-center border-2 rounded-xl py-2 px-3 text-base font-semibold 
                              focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
                              disabled:bg-gray-50 disabled:text-gray-400
                              [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    disabled={isLoading}
-                />
-                {quantity >= item.pd_qty && (
-                    <span className="absolute -top-2 right-0 text-xs font-medium text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
-                        Max
-                    </span>
-                )}
-            </div>
+                                                        disabled={isLoading}
+                                                    />
+                                                    {quantity >=
+                                                        item.pd_qty && (
+                                                        <span className="absolute -top-2 right-0 text-xs font-medium text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
+                                                            Max
+                                                        </span>
+                                                    )}
+                                                </div>
 
-            <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7 rounded-full border-2 hover:border-green-500 hover:bg-green-100 transition-all duration-200 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:border-gray-200"
-                onClick={() => updateQuantity(item.pd_id, 1)}
-                disabled={quantity >= item.pd_qty || isLoading}
-            >
-                <Plus className={`h-4 w-4 ${quantity >= item.pd_qty ? 'text-gray-300' : 'text-gray-600'}`} />
-            </Button>
-        </div>
-
-
-
-    
-    </div>
-)}
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full border-2 hover:border-green-500 hover:bg-green-100 transition-all duration-200 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:border-gray-200"
+                                                    onClick={() =>
+                                                        updateQuantity(
+                                                            item.pd_id,
+                                                            1,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        quantity >=
+                                                            item.pd_qty ||
+                                                        isLoading
+                                                    }
+                                                >
+                                                    <Plus
+                                                        className={`h-4 w-4 ${quantity >= item.pd_qty ? "text-gray-300" : "text-gray-600"}`}
+                                                    />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
 
                                 {/* Add to Cart Button */}
                                 <div className="flex items-center justify-center">
                                     <Button
                                         size="sm"
                                         className={`text-sm sm:text-base w-full rounded-full ${
-                                            isInvalidItem || !isAvailable || item.pd_qty === 0
+                                            isInvalidItem ||
+                                            !isAvailable ||
+                                            item.pd_qty === 0
                                                 ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
                                                 : "bg-green-600 hover:bg-green-700"
                                         }`}
@@ -393,10 +448,11 @@ export default function CategoryItems({
                                         {isInvalidItem
                                             ? "Not Available"
                                             : loadingItem === item.pd_id
-                                                ? "Adding..."
-                                                : !isAvailable || item.pd_qty === 0
-                                                    ? "Out of Stock"
-                                                    : `+ Add (${quantity})`}
+                                              ? "Adding..."
+                                              : !isAvailable ||
+                                                  item.pd_qty === 0
+                                                ? "Out of Stock"
+                                                : `+ Add (${quantity})`}
                                     </Button>
                                 </div>
                             </CardContent>

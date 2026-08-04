@@ -61,7 +61,7 @@ export default function Menu({
 
             {/* 2. Your content needs "relative" and a higher Z-index to sit on top */}
             <div className="relative z-10 py-8">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="flex-1 space-y-6 p-4 md:p-6">
                     <div className="grid lg:grid-cols-3 gap-6">
                         {/* Left Column - Menu */}
                         <div className="lg:col-span-2 space-y-6">

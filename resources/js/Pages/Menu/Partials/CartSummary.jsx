@@ -537,7 +537,7 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                     </span>
                                 </div>
 
-                                {paymentMethod === "cash" && (
+                                {/* {paymentMethod === "cash" && (
                                     <>
                                         <div className="flex justify-between items-center">
                                             <span>Payment:</span>
@@ -568,12 +568,12 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                             </span>
                                         </div>
                                     </>
-                                )}
+                                )} */}
                             </div>
                         )}
 
                         {/* Payment Methods */}
-                        {cartItems.length > 0 && (
+                        {/* {cartItems.length > 0 && (
                             <div>
                                 <h4 className="font-medium mb-3">
                                     Payment Method
@@ -638,7 +638,7 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                     </button>
                                 </div>
                             </div>
-                        )}
+                        )} */}
 
                         {/* Place Order Button */}
                         {/* Checkout Button */}
