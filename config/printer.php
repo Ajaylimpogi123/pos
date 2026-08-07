@@ -22,7 +22,7 @@ return [
             'method' => env('PRINTER_KITCHEN_METHOD', 'network'),
             'com_port' => env('PRINTER_KITCHEN_COM_PORT', 'COM4'),
             'com_baud' => env('PRINTER_KITCHEN_BAUD', 9600),
-            'network_ip' => env('PRINTER_KITCHEN_IP', '192.168.1.3'),
+            'network_ip' => env('PRINTER_KITCHEN_IP', '192.168.1.102'),
             'network_port' => env('PRINTER_KITCHEN_PORT', 9100),
         ],
 
