@@ -262,7 +262,6 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
     return (
         <>
             <CheckoutModal
-                table_id={table_id}
                 isOpen={checkoutOpen}
                 onClose={() => setCheckoutOpen(false)}
                 cartItems={cartItems}

@@ -1,7 +1,6 @@
 import { Button } from "@/Components/ui/button";
 import { Banknote, Smartphone, Printer, X } from "lucide-react";
-import { router, usePage } from "@inertiajs/react";
-import { useState } from "react";
+
 export default function CheckoutModal({
     isOpen,
     onClose,
@@ -17,90 +16,11 @@ export default function CheckoutModal({
     setPayment,
     change,
     onConfirm,
-
+    isPlacingOrder,
     onPrintKitchen,
     isPrintingKitchen,
-    table_id,
 }) {
-    const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-
     if (!isOpen) return null;
-
-    const handleConfirm = () => {
-        setIsPlacingOrder(true);
-
-        router.post(
-            route("order.place", table_id),
-            {
-                payment_method: paymentMethod,
-                od_amount_due: amountDue,
-                od_discount: discount,
-                od_total_amt_due: amountDue,
-                od_payment: payment,
-                od_change: change,
-                items: cartItems.map((item) => ({
-                    pd_id: item.pd_id || item.id,
-                    ct_qty: item.ct_qty || 1,
-                    ct_price: item.pd_price || item.ct_price,
-                })),
-            },
-            {
-                onSuccess: (page) => {
-                    const order = page.props.flash?.order;
-                    if (order) {
-                        printReceipt(order);
-                    } else {
-                        console.warn(
-                            "Order saved but no order data returned — check flash sharing in HandleInertiaRequests.",
-                        );
-                    }
-                    onClose();
-                },
-                onError: (errors) => {
-                    console.error("Order failed:", errors);
-                    // errors are also available via usePage().props.errors
-                    // if you want to render them inline in the modal
-                },
-                onFinish: () => {
-                    setIsPlacingOrder(false);
-                },
-            },
-        );
-    };
-
-    async function printReceipt(order) {
-        try {
-            const response = await fetch(
-                "http://127.0.0.1:8080/print-agent/print-agent.php",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        invoice_number: order.invoice_no,
-                        date: order.created_at,
-                        customer_name: order.customer?.cust_fname || "Walk-in",
-                        items: order.items.map((i) => ({
-                            name: i.products?.pd_name ?? "Item",
-                            unit: "pcs",
-                            qty: i.oi_qty,
-                            total: (i.oi_price * i.oi_qty).toFixed(2),
-                        })),
-                        total: order.od_total_amt_due,
-                        payment_method: order.payment_method,
-                    }),
-                },
-            );
-            const result = await response.json();
-            if (!result.success) {
-                console.error("Print failed:", result.error);
-            }
-        } catch (err) {
-            console.error(
-                "Print agent unreachable — is XAMPP Apache running?",
-                err,
-            );
-        }
-    }
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -335,7 +255,7 @@ export default function CheckoutModal({
                     </Button>
                     <Button
                         className="flex-1 bg-green-600 hover:bg-green-700"
-                        onClick={handleConfirm}
+                        onClick={onConfirm}
                         disabled={
                             isPlacingOrder ||
                             cartItems.length === 0 ||
