@@ -63,11 +63,20 @@ class DatabaseSeeder extends Seeder
         // were included in the search array this would never match and
         // would throw a duplicate-key error on the second run.
         User::firstOrCreate(
-            ['email' => 'ajay@gmail.com'],
+            ['email' => 'admin@gmail.com'],
             [
-                'name'      => 'ajay',
-                'password'  => Hash::make('ajaylimpogi'),
+                'name'      => 'admin',
+                'password'  => Hash::make('password'),
                 'role_id'   => 2,
+                'branch_id' => $branch->id,
+            ]
+        );
+        User::firstOrCreate(
+            ['email' => 'cashier@gmail.com'],
+            [
+                'name'      => 'cashier',
+                'password'  => Hash::make('password'),
+                'role_id'   => 1,
                 'branch_id' => $branch->id,
             ]
         );

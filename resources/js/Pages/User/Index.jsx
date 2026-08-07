@@ -91,7 +91,7 @@ export default function Index({ users, filters }) {
                                     Manage your users and organization
                                 </p>
                             </div>
-                            <AddModal>
+                            {/* <AddModal>
                                 {" "}
                                 <Button
                                     size="sm"
@@ -100,7 +100,7 @@ export default function Index({ users, filters }) {
                                     <Plus className="h-4 w-4" />
                                     Add Product
                                 </Button>
-                            </AddModal>
+                            </AddModal> */}
                         </div>
                     </div>
 
