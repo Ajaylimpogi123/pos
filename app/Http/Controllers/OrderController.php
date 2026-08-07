@@ -156,7 +156,7 @@ class OrderController extends Controller
             $order->load('items.products', 'items.ingredients.ingredient');
 
             // {Pinter logic here} - This is where you would send the order to the printer if needed.
-            app(\App\Services\ReceiptPrinterService::class)->printReceipt($order);
+            // app(\App\Services\ReceiptPrinterService::class)->printReceipt($order);
             
 
             // Redirect back to menu page with flash data
