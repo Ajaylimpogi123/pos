@@ -1,6 +1,7 @@
 import { Button } from "@/Components/ui/button";
 import { Banknote, Smartphone, Printer, X } from "lucide-react";
 import { router, usePage } from "@inertiajs/react";
+import { useState } from "react";
 export default function CheckoutModal({
     isOpen,
     onClose,
@@ -16,7 +17,7 @@ export default function CheckoutModal({
     setPayment,
     change,
     onConfirm,
-    isPlacingOrder,
+
     onPrintKitchen,
     isPrintingKitchen,
     table_id,
@@ -29,7 +30,7 @@ export default function CheckoutModal({
         setIsPlacingOrder(true);
 
         router.post(
-            route("order.store", table_id),
+            route("order.place", table_id),
             {
                 payment_method: paymentMethod,
                 od_amount_due: amountDue,
