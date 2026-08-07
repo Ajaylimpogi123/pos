@@ -21,8 +21,6 @@ export default function CheckoutModal({
     isPrintingKitchen,
     table_id,
 }) {
-    if (!isOpen) return null;
-
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
     if (!isOpen) return null;
