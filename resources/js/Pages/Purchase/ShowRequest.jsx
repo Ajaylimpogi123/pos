@@ -58,6 +58,7 @@ export default function ShowRequest({ purchaseRequest }) {
                             <thead>
                                 <tr className="bg-gray-50 text-left border-b">
                                     <th className="p-2">Item</th>
+                                    <th className="p-2">Supplier</th>
                                     <th className="p-2">Unit</th>
                                     <th className="p-2">Quantity</th>
                                     <th className="p-2">Est. Unit Price</th>
@@ -68,6 +69,10 @@ export default function ShowRequest({ purchaseRequest }) {
                                     <tr key={item.id} className="border-b">
                                         <td className="p-2">
                                             {item.item_name}
+                                        </td>
+                                        <td className="p-2">
+                                            {item.supplier?.supplier_name ??
+                                                "—"}
                                         </td>
                                         <td className="p-2">
                                             {item.unit ?? "—"}

@@ -96,14 +96,6 @@ export default function Login({ status, canResetPassword }) {
                                     >
                                         Password
                                     </label>
-                                    {canResetPassword && (
-                                        <Link
-                                            href={route("password.request")}
-                                            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-                                        >
-                                            Forgot password?
-                                        </Link>
-                                    )}
                                 </div>
                                 <div className="relative">
                                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">

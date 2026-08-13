@@ -13,11 +13,13 @@ return new class extends Migration
             $table->foreignId('purchase_request_id')
                   ->constrained('tbl_purchase_request')
                   ->cascadeOnDelete();
-
+                  
 
             $table->foreignId('ingredient_id')
                   ->nullable()
                   ->constrained(table: 'tbl_ingredient', column: 'ing_id');
+
+                      $table->foreignId('supplier_id')->nullable();
             $table->string('item_name');
             $table->string('unit')->nullable(); // pcs, box, bottle, etc.
             $table->decimal('quantity', 12, 2);

@@ -19,6 +19,7 @@ export default function CreateOrder({
             ? purchaseRequest.items.map((i) => ({
                   ingredient_id: i.ingredient_id ?? "",
                   item_name: i.item_name,
+                  supplier_id: i.supplier_id ?? "",
                   unit: i.unit ?? "",
                   quantity: i.quantity,
                   unit_price: i.estimated_unit_price ?? "",
@@ -26,6 +27,7 @@ export default function CreateOrder({
             : [
                   {
                       ingredient_id: "",
+                      supplier_id: "",
                       item_name: "",
                       unit: "",
                       quantity: 1,
@@ -82,31 +84,6 @@ export default function CreateOrder({
                             {errors.branch_id && (
                                 <p className="text-red-600 text-xs mt-1">
                                     {errors.branch_id}
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Supplier
-                            </label>
-                            <select
-                                value={data.supplier_id}
-                                onChange={(e) =>
-                                    setData("supplier_id", e.target.value)
-                                }
-                                className="w-full border rounded-md px-2 py-1.5"
-                            >
-                                <option value="">Select supplier</option>
-                                {suppliers.map((s) => (
-                                    <option key={s.id} value={s.id}>
-                                        {s.supplier_name}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.supplier_id && (
-                                <p className="text-red-600 text-xs mt-1">
-                                    {errors.supplier_id}
                                 </p>
                             )}
                         </div>
@@ -170,6 +147,7 @@ export default function CreateOrder({
                             ingredients={ingredients}
                             priceField="unit_price"
                             priceLabel="Unit Price"
+                            suppliers={suppliers}
                         />
                         {errors.items && (
                             <p className="text-red-600 text-xs mt-1">

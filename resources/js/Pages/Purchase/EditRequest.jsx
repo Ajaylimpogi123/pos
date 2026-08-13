@@ -6,6 +6,7 @@ export default function EditRequest({
     purchaseRequest,
     branches,
     ingredients,
+    suppliers,
 }) {
     const { data, setData, put, processing, errors } = useForm({
         branch_id: purchaseRequest.branch_id ?? "",
@@ -14,6 +15,7 @@ export default function EditRequest({
         items: purchaseRequest.items.length
             ? purchaseRequest.items.map((i) => ({
                   ingredient_id: i.ingredient_id ?? "",
+                  supplier_id: i.supplier_id ?? "",
                   item_name: i.item_name,
                   unit: i.unit ?? "",
                   quantity: i.quantity,
@@ -22,6 +24,7 @@ export default function EditRequest({
             : [
                   {
                       ingredient_id: "",
+                      supplier_id: "",
                       item_name: "",
                       unit: "",
                       quantity: 1,
@@ -111,6 +114,7 @@ export default function EditRequest({
                             ingredients={ingredients}
                             priceField="estimated_unit_price"
                             priceLabel="Est. Unit Price"
+                            suppliers={suppliers}
                         />
                         {errors.items && (
                             <p className="text-red-600 text-xs mt-1">

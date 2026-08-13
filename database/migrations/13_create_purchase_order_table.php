@@ -19,7 +19,7 @@ return new class extends Migration
                   ->nullOnDelete();
 
             $table->foreignId('branch_id')->constrained('tbl_branch');
-            $table->foreignId('supplier_id')->nullable()->constrained('tbl_supplier');
+            $table->foreignId('supplier_id')->nullable();
             $table->foreignId('created_by')->constrained('users');
 
             $table->date('order_date')->nullable();

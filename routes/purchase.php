@@ -26,4 +26,8 @@ Route::middleware('auth')->group(function () {
         ->name('purchase-orders.reject');
     Route::post('purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])
         ->name('purchase-orders.receive');
+
+        // routes/web.php
+Route::post('purchase-orders/{purchaseOrder}/items/{item}/receive', [PurchaseOrderController::class, 'receiveItem'])
+    ->name('purchase-order-items.receive');
 });

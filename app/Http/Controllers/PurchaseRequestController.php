@@ -6,6 +6,7 @@ use App\Models\PurchaseRequest;
 use App\Models\PurchaseOrder;
 use App\Models\Branch;
 use App\Models\Ingredient;
+use App\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -125,6 +126,7 @@ class PurchaseRequestController extends Controller
         return Inertia::render('Purchase/CreateRequest', [
             'branches' => Branch::all(['id', 'branch_name']),
             'ingredients' => Ingredient::all(['ing_id', 'ing_name', 'branch_id']),
+            'suppliers'   => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
         ]);
     }
 
@@ -132,6 +134,7 @@ class PurchaseRequestController extends Controller
     {
         $validated = $request->validate([
             'branch_id'    => ['required', 'integer', 'exists:tbl_branch,id'],
+            
             'date_needed'  => ['nullable', 'date'],
             'remarks'      => ['nullable', 'string'],
 
@@ -141,6 +144,8 @@ class PurchaseRequestController extends Controller
                 Rule::exists('tbl_ingredient', 'ing_id')
                     ->where(fn ($q) => $q->where('branch_id', $request->input('branch_id'))),
             ],
+            'items.*.supplier_id' => ['nullable', 'integer', 'exists:tbl_supplier,id'],
+
             'items.*.item_name'           => ['required', 'string', 'max:255'],
             'items.*.unit'                => ['nullable', 'string', 'max:50'],
             'items.*.quantity'            => ['required', 'numeric', 'min:0.01'],
@@ -172,9 +177,10 @@ class PurchaseRequestController extends Controller
 
     public function show(PurchaseRequest $purchaseRequest): Response
     {
-        $purchaseRequest->load(['branch', 'requestedBy', 'approvedBy', 'items.ingredient', 'purchaseOrders']);
+        $purchaseRequest->load(['branch', 'requestedBy', 'approvedBy',  'items.ingredient', 'items.supplier', 'purchaseOrders']);
 
         return Inertia::render('Purchase/ShowRequest', [
+            
             'purchaseRequest' => $purchaseRequest,
         ]);
     }
@@ -189,6 +195,7 @@ class PurchaseRequestController extends Controller
             'purchaseRequest' => $purchaseRequest,
             'branches'        => Branch::all(['id', 'branch_name']),
             'ingredients'     => Ingredient::all(['ing_id', 'ing_name', 'branch_id']),
+            'suppliers'       => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
         ]);
     }
 

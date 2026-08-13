@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('ingredient_id')
                   ->nullable()
                   ->constrained(table: 'tbl_ingredient', column: 'ing_id');
+           $table->foreignId('supplier_id')->nullable()->constrained('tbl_supplier');
+           
             $table->string('item_name');
             $table->string('unit')->nullable();
             $table->decimal('quantity', 12, 2);

@@ -5,6 +5,57 @@ import StatusBadge from "./Partials/StatusBadge";
 import RejectModal from "./Partials/RejectModal";
 import { usePage } from "@inertiajs/react";
 
+function ReceiveItemCell({ purchaseOrderId, item }) {
+    const remaining = Number(item.quantity) - Number(item.quantity_received);
+    const alreadyFull = remaining <= 0;
+
+    const [qty, setQty] = useState(item.quantity_received);
+    const [submitting, setSubmitting] = useState(false);
+
+    const confirmReceive = () => {
+        setSubmitting(true);
+        router.post(
+            route("purchase-order-items.receive", {
+                purchaseOrder: purchaseOrderId,
+                item: item.id,
+            }),
+            { quantity_received: qty },
+            {
+                preserveScroll: true,
+                onFinish: () => setSubmitting(false),
+            },
+        );
+    };
+
+    return (
+        <td className="p-2">
+            <div className="flex items-center gap-2">
+                <input
+                    type="number"
+                    min="0"
+                    max={item.quantity}
+                    step="0.01"
+                    value={qty}
+                    onChange={(e) => setQty(e.target.value)}
+                    disabled={alreadyFull || submitting}
+                    className="w-24 border rounded-md px-2 py-1 disabled:bg-gray-100"
+                />
+                <button
+                    onClick={confirmReceive}
+                    disabled={alreadyFull || submitting}
+                    className="text-xs px-2 py-1 rounded-md bg-cyan-600 text-white disabled:opacity-40 whitespace-nowrap"
+                >
+                    {alreadyFull
+                        ? "Received"
+                        : submitting
+                          ? "Saving..."
+                          : "Confirm Receive"}
+                </button>
+            </div>
+        </td>
+    );
+}
+
 export default function ShowOrder({ purchaseOrder }) {
     const ADMIN_ROLE_ID = 2;
 
@@ -12,12 +63,6 @@ export default function ShowOrder({ purchaseOrder }) {
     const isAdmin = auth?.user?.role_id === ADMIN_ROLE_ID;
 
     const [rejectOpen, setRejectOpen] = useState(false);
-    const [receiving, setReceiving] = useState(false);
-    const [receiveQty, setReceiveQty] = useState(
-        Object.fromEntries(
-            purchaseOrder.items.map((i) => [i.id, i.quantity_received]),
-        ),
-    );
 
     const canReceive =
         purchaseOrder.status === "approved" ||
@@ -29,25 +74,6 @@ export default function ShowOrder({ purchaseOrder }) {
             route("purchase-orders.approve", purchaseOrder.id),
             {},
             { preserveScroll: true },
-        );
-    };
-
-    const submitReceive = () => {
-        setReceiving(true);
-        router.post(
-            route("purchase-orders.receive", purchaseOrder.id),
-            {
-                items: Object.entries(receiveQty).map(
-                    ([id, quantity_received]) => ({
-                        id,
-                        quantity_received,
-                    }),
-                ),
-            },
-            {
-                preserveScroll: true,
-                onFinish: () => setReceiving(false),
-            },
         );
     };
 
@@ -124,6 +150,7 @@ export default function ShowOrder({ purchaseOrder }) {
                             <thead>
                                 <tr className="bg-gray-50 text-left border-b">
                                     <th className="p-2">Item</th>
+                                    <th className="p-2">Supplier</th>
                                     <th className="p-2">Unit</th>
                                     <th className="p-2">Qty Ordered</th>
                                     <th className="p-2">Unit Price</th>
@@ -140,6 +167,10 @@ export default function ShowOrder({ purchaseOrder }) {
                                             {item.item_name}
                                         </td>
                                         <td className="p-2">
+                                            {item.supplier?.supplier_name ??
+                                                "—"}
+                                        </td>
+                                        <td className="p-2">
                                             {item.unit ?? "—"}
                                         </td>
                                         <td className="p-2">{item.quantity}</td>
@@ -151,43 +182,17 @@ export default function ShowOrder({ purchaseOrder }) {
                                             ₱{Number(item.subtotal).toFixed(2)}
                                         </td>
                                         {canReceive && (
-                                            <td className="p-2">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max={item.quantity}
-                                                    step="0.01"
-                                                    value={receiveQty[item.id]}
-                                                    onChange={(e) =>
-                                                        setReceiveQty(
-                                                            (prev) => ({
-                                                                ...prev,
-                                                                [item.id]:
-                                                                    e.target
-                                                                        .value,
-                                                            }),
-                                                        )
-                                                    }
-                                                    className="w-24 border rounded-md px-2 py-1"
-                                                />
-                                            </td>
+                                            <ReceiveItemCell
+                                                purchaseOrderId={
+                                                    purchaseOrder.id
+                                                }
+                                                item={item}
+                                            />
                                         )}
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-
-                        {canReceive && (
-                            <button
-                                onClick={submitReceive}
-                                disabled={receiving}
-                                className="mt-3 px-4 py-1.5 text-sm rounded-md bg-cyan-600 text-white disabled:opacity-50"
-                            >
-                                {receiving
-                                    ? "Saving..."
-                                    : "Update Received Quantities"}
-                            </button>
-                        )}
                     </div>
 
                     {purchaseOrder.status === "rejected" &&

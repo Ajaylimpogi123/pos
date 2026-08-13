@@ -3,7 +3,7 @@ import { Head, useForm } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import ItemsEditor from "./Partials/ItemsEditor";
 
-export default function CreateRequest({ branches, ingredients }) {
+export default function CreateRequest({ branches, ingredients, suppliers }) {
     console.log("ingredients", ingredients);
     const { data, setData, post, processing, errors } = useForm({
         branch_id: "",
@@ -12,6 +12,7 @@ export default function CreateRequest({ branches, ingredients }) {
         items: [
             {
                 ingredient_id: "",
+                supplier_id: "",
                 item_name: "",
                 unit: "",
                 quantity: 1,
@@ -104,6 +105,7 @@ export default function CreateRequest({ branches, ingredients }) {
                             items={data.items}
                             onChange={(items) => setData("items", items)}
                             ingredients={ingredients}
+                            suppliers={suppliers}
                             priceField="estimated_unit_price"
                             priceLabel="Est. Unit Price"
                         />

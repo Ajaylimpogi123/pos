@@ -15,9 +15,15 @@ export default function ItemsEditor({
     items,
     onChange,
     ingredients = [],
+    suppliers = [],
     priceField,
     priceLabel,
 }) {
+    const updateItem = (index, field, value) => {
+        const next = [...items];
+        next[index] = { ...next[index], [field]: value };
+        onChange(next);
+    };
     const ingredientOptions = ingredients.map((i) => ({
         value: i.ing_id,
         label: i.ing_name,
@@ -79,6 +85,7 @@ export default function ItemsEditor({
                 <thead>
                     <tr className="bg-gray-50 text-left border-b">
                         <th className="p-2 w-1/3">Item</th>
+                        <th className="p-2">Supplier</th>
                         <th className="p-2 w-40">Unit</th>
                         <th className="p-2">Quantity</th>
                         <th className="p-2">{priceLabel}</th>
@@ -103,6 +110,27 @@ export default function ItemsEditor({
                                     placeholder="Search ingredient or type new item"
                                 />
                             </td>
+                            <td className="p-2">
+                                <select
+                                    value={item.supplier_id ?? ""}
+                                    onChange={(e) =>
+                                        updateItem(
+                                            index,
+                                            "supplier_id",
+                                            e.target.value || null,
+                                        )
+                                    }
+                                    className="w-full border rounded-md px-2 py-1.5"
+                                >
+                                    <option value="">— No supplier —</option>
+                                    {suppliers.map((s) => (
+                                        <option key={s.id} value={s.id}>
+                                            {s.supplier_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </td>
+
                             <td className="p-2">
                                 <SearchableSelect
                                     value={item.unit}
