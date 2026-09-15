@@ -11,8 +11,10 @@ import {
     XCircle,
     TrendingUp,
     TrendingDown,
+    ArrowLeftRight,
 } from "lucide-react";
 import EditModal from "./EditModal";
+import IngredientConversionModal from "./IngredientConversionModal";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -263,6 +265,14 @@ export default function Card({ children, ingredients }) {
                                                             Edit
                                                         </div>
                                                     </EditModal>
+                                                    <IngredientConversionModal
+                                                        ingredient={ingredient}
+                                                    >
+                                                        <div className="bg-blue-50 text-blue-700 text-xs hover:bg-blue-100 pl-2 pr-4 py-1.5 rounded-md cursor-pointer flex items-center gap-2 mt-1.5">
+                                                            <ArrowLeftRight className="h-3.5 w-3.5" />{" "}
+                                                            Conversions
+                                                        </div>
+                                                    </IngredientConversionModal>
                                                     <div
                                                         className="bg-red-50 text-red-700 text-xs hover:bg-red-100 pl-2 pr-4 py-1.5 rounded-md cursor-pointer flex items-center gap-2 mt-1.5"
                                                         onClick={() =>

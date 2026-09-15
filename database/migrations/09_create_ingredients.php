@@ -18,9 +18,9 @@ return new class extends Migration
        $table->foreignId('branch_id')->constrained('tbl_branch');
      
          $table->string('ing_name', 244)->default('');
-           $table->bigInteger('ing_qty')->default(0);
+           $table->decimal('ing_qty', 12, 4)->default(0);
          $table->string('unit', 244)->default('');
-         $table->bigInteger('ing_mqty')->default(0);
+         $table->decimal('ing_mqty', 12, 4)->default(0);
           $table->decimal('ing_cost', 10, 2)->default(0);
           $table->string('ing_image', 240)->nullable();
           $table->string('ing_status', 100)->nullable();

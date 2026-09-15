@@ -19,6 +19,7 @@ class IngredientController extends Controller
     $search = $request->input('search');
 
     $ingredients = Ingredient::query()
+        ->with('conversions') // needed so the "Conversions" modal has data to show
         ->when($search, function ($query, $search) {
             $query->where(function ($query) use ($search) {
                 $query->where('ing_name', 'like', "%{$search}%");        
@@ -41,8 +42,8 @@ class IngredientController extends Controller
             'ing_name'        => ['required', 'string', 'max:244'],
             'ing_cost'        => ['required', 'numeric'],
             'unit'        => ['required', 'string', 'max:244'],
-              'ing_qty' => ['nullable', 'integer', 'min:0'],
-            'ing_mqty' => ['nullable', 'integer', 'min:0'],
+              'ing_qty' => ['nullable', 'numeric', 'min:0'],
+            'ing_mqty' => ['nullable', 'numeric', 'min:0'],
            'ing_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'], // 5 MB
         
         ]);
@@ -74,8 +75,8 @@ class IngredientController extends Controller
             'ing_name'        => ['required', 'string', 'max:244'],
             'ing_cost'        => ['required', 'numeric'],
             'unit'        => ['required', 'string', 'max:244'],
-            'ing_qty'         => ['nullable', 'integer', 'min:0'],
-            'ing_mqty'        => ['required', 'integer', 'min:0'],
+            'ing_qty'         => ['nullable', 'numeric', 'min:0'],
+            'ing_mqty'        => ['required', 'numeric', 'min:0'],
             'ing_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'], // 5 MB
    
         ]);

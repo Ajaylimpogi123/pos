@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('pd_id'); // ✅ MATCH
             $table->unsignedBigInteger('ing_id'); // ✅ MATCH
 
-            $table->decimal('pd_ing_qty', 10, 2)->default(0.00);
+            $table->decimal('pd_ing_qty', 12, 4)->default(0.00);
 
             $table->timestamps();
             $table->softDeletes();

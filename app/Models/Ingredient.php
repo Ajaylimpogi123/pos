@@ -29,4 +29,14 @@ class Ingredient extends Model
                     ->withPivot('pd_ing_qty')
                     ->withTimestamps();
     }
+
+
+        // Custom unit conversions defined specifically for this ingredient
+    // (e.g. "1 cup = 120 g" for Flour). Used by the recipe builder to
+    // offer conversions that can't be auto-derived, since they depend on
+    // this ingredient's density.
+    public function conversions()
+    {
+        return $this->hasMany(IngredientConversion::class, 'ing_id', 'ing_id');
+    }
 }

@@ -43,7 +43,11 @@ $category = $request->input('category');
     $categories = Category::orderBy('cat_name', 'asc')
         ->get(['cat_id', 'cat_name']);
 
-        $ingredients = Ingredient::orderBy('ing_name', 'asc')
+        // Eager-load each ingredient's custom unit conversions so the
+        // recipe builder can offer them in its unit dropdown alongside
+        // the automatic mass/volume/count conversions.
+        $ingredients = Ingredient::with('conversions')
+        ->orderBy('ing_name', 'asc')
         ->get(['ing_id', 'ing_name', 'unit']);
 
     return Inertia::render('Product/Index', [

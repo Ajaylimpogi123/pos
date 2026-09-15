@@ -49,3 +49,4 @@ require __DIR__ . '/ingredient.php';
 require __DIR__ . '/customer.php';
 require __DIR__ . '/purchase.php';
 require __DIR__ . '/supplier.php';
+require __DIR__ . '/ing_conversion.php';

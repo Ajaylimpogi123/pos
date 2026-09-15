@@ -11,8 +11,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import InputError from "@/Components/InputError";
-import { Search, ChevronDown, X } from "lucide-react";
+import { Search, ChevronDown } from "lucide-react";
 import useEditProduct from "../Hooks/useEditProduct";
+import IngredientQtyRow from "./IngredientQtyRow";
 
 export default function EditProductModal({
     product,
@@ -23,7 +24,7 @@ export default function EditProductModal({
     const [ingredientSearch, setIngredientSearch] = useState("");
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
-    console.log("ing", ingredients);
+
     const {
         open,
         openModal,
@@ -78,7 +79,7 @@ export default function EditProductModal({
             <div onClick={openModal}>{children}</div>
 
             <Dialog open={open} onOpenChange={closeModal}>
-                <DialogContent className="sm:max-w-[560px] rounded-md max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-[580px] rounded-md max-h-[90vh] overflow-y-auto">
                     <form onSubmit={handleSubmit}>
                         <DialogHeader>
                             <DialogTitle className="mb-2">
@@ -221,7 +222,7 @@ export default function EditProductModal({
 
                                     {/* Selected ingredients table */}
                                     {data.ingredients.length > 0 && (
-                                        <div className="border rounded-md overflow-hidden text-sm">
+                                        <div className="border rounded-md text-sm">
                                             <table className="w-full">
                                                 <thead className="bg-muted text-muted-foreground text-xs uppercase">
                                                     <tr>
@@ -229,64 +230,27 @@ export default function EditProductModal({
                                                             Ingredient
                                                         </th>
                                                         <th className="text-left px-3 py-2">
-                                                            Unit
+                                                            Stock Unit
                                                         </th>
                                                         <th className="text-left px-3 py-2">
-                                                            Qty / Product
+                                                            Recipe Qty
                                                         </th>
-                                                        <th className="px-3 py-2" />
+                                                        <th className="px-2 py-2" />
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y">
                                                     {data.ingredients.map(
                                                         (ing) => (
-                                                            <tr
+                                                            <IngredientQtyRow
                                                                 key={ing.ing_id}
-                                                                className="hover:bg-muted/40"
-                                                            >
-                                                                <td className="px-3 py-2 font-medium">
-                                                                    {
-                                                                        ing.ing_name
-                                                                    }
-                                                                </td>
-                                                                <td className="px-3 py-2 text-muted-foreground">
-                                                                    {ing.unit}
-                                                                </td>
-                                                                <td className="px-3 py-2">
-                                                                    <Input
-                                                                        type="number"
-                                                                        min="0"
-                                                                        step="0.01"
-                                                                        value={
-                                                                            ing.pd_ing_qty
-                                                                        }
-                                                                        onChange={(
-                                                                            e,
-                                                                        ) =>
-                                                                            updateIngredientQty(
-                                                                                ing.ing_id,
-                                                                                e
-                                                                                    .target
-                                                                                    .value,
-                                                                            )
-                                                                        }
-                                                                        className="w-24 h-8"
-                                                                    />
-                                                                </td>
-                                                                <td className="px-3 py-2">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            removeIngredient(
-                                                                                ing.ing_id,
-                                                                            )
-                                                                        }
-                                                                        className="text-destructive hover:text-destructive/80"
-                                                                    >
-                                                                        <X className="h-4 w-4" />
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
+                                                                ing={ing}
+                                                                onQtyChange={
+                                                                    updateIngredientQty
+                                                                }
+                                                                onRemove={
+                                                                    removeIngredient
+                                                                }
+                                                            />
                                                         ),
                                                     )}
                                                 </tbody>
