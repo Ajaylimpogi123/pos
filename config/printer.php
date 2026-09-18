@@ -13,7 +13,7 @@ return [
             'method' => env('PRINTER_CASHIER_METHOD', 'network'),
             'com_port' => env('PRINTER_CASHIER_COM_PORT', 'COM3'),
             'com_baud' => env('PRINTER_CASHIER_BAUD', 9600),
-            'network_ip' => env('PRINTER_CASHIER_IP', '192.168.1.10'),
+            'network_ip' => env('PRINTER_CASHIER_IP', '192.168.1.101'),
             'network_port' => env('PRINTER_CASHIER_PORT', 9100),
         ],
 

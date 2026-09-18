@@ -108,20 +108,6 @@ export default function PurchaseRequestsTab({ purchaseRequests }) {
                                             </button>
                                         </>
                                     )}
-
-                                    {pr.status === "approved" && isAdmin && (
-                                        <Link
-                                            href={route(
-                                                "purchase-orders.create",
-                                                {
-                                                    purchase_request_id: pr.id,
-                                                },
-                                            )}
-                                            className="text-xs px-2 py-1 rounded-md bg-blue-600 text-white"
-                                        >
-                                            Convert to PO
-                                        </Link>
-                                    )}
                                 </td>
                             </tr>
                         ))}

@@ -3,7 +3,7 @@ use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
-    Route::post('/order/{table_id}/place', [OrderController::class, 'store'])->name('order.place');
+    Route::post('/order/place', [OrderController::class, 'store'])->name('order.place');
     Route::get('/order/{od_id}/print', [OrderController::class, 'print'])->name('order.print');
-    Route::post('/order/{table_id}/print-kitchen', [OrderController::class, 'printKitchen'])->name('order.printKitchen');
+    Route::post('/order/print-kitchen', [OrderController::class, 'printKitchen'])->name('order.printKitchen');
 });

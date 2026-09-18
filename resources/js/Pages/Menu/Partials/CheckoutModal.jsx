@@ -5,7 +5,6 @@ export default function CheckoutModal({
     isOpen,
     onClose,
     cartItems,
-    tableNumber,
     subTotal,
     discount,
     setDiscount,
@@ -15,12 +14,16 @@ export default function CheckoutModal({
     payment,
     setPayment,
     change,
+    referenceNo,
+    setReferenceNo,
     onConfirm,
     isPlacingOrder,
     onPrintKitchen,
     isPrintingKitchen,
 }) {
     if (!isOpen) return null;
+
+    const refMissing = paymentMethod === "gcash" && !referenceNo?.trim();
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -53,9 +56,6 @@ export default function CheckoutModal({
                             <h4 className="font-medium text-gray-900">
                                 Order Review
                             </h4>
-                            <span className="text-xs text-gray-400">
-                                Table {tableNumber}
-                            </span>
                         </div>
                         <div className="space-y-3 max-h-52 overflow-y-auto pr-1">
                             {cartItems.map((item) => {
@@ -140,7 +140,8 @@ export default function CheckoutModal({
                             <button
                                 onClick={() => {
                                     setPaymentMethod("cash");
-                                    setPayment(0);
+                                    setPayment(amountDue);
+                                    setReferenceNo("");
                                 }}
                                 disabled={isPlacingOrder}
                                 className={`p-3 border-2 rounded-xl ${
@@ -197,6 +198,33 @@ export default function CheckoutModal({
                             </button>
                         </div>
                     </div>
+
+                    {/* Reference Number (GCash only) */}
+                    {paymentMethod === "gcash" && (
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">
+                                GCash Reference Number
+                            </label>
+                            <input
+                                type="text"
+                                value={referenceNo}
+                                onChange={(e) => setReferenceNo(e.target.value)}
+                                className={`mt-1 w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                                    refMissing
+                                        ? "border-red-300 focus:ring-red-400"
+                                        : "focus:ring-green-500"
+                                }`}
+                                placeholder="e.g. 1234567890123"
+                                disabled={isPlacingOrder}
+                            />
+                            {refMissing && (
+                                <p className="text-xs text-red-500 mt-1">
+                                    Reference number is required for GCash
+                                    payments.
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {/* Amount Received (cash only) */}
                     {paymentMethod === "cash" && (
@@ -259,7 +287,8 @@ export default function CheckoutModal({
                         disabled={
                             isPlacingOrder ||
                             cartItems.length === 0 ||
-                            (paymentMethod === "cash" && payment < amountDue)
+                            (paymentMethod === "cash" && payment < amountDue) ||
+                            refMissing
                         }
                     >
                         {isPlacingOrder ? "Processing..." : "Confirm Sale"}

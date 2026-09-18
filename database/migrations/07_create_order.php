@@ -12,7 +12,7 @@ return new class extends Migration
 
             // ✅ Define columns ONCE
             $table->unsignedBigInteger('cust_id');
-            $table->unsignedBigInteger('table_id');
+
 
             // ✅ Foreign keys
             $table->foreign('cust_id')
@@ -20,14 +20,12 @@ return new class extends Migration
                   ->on('tbl_customer')
                   ->cascadeOnDelete();
 
-            $table->foreign('table_id')
-                  ->references('table_id')
-                  ->on('bs_table')
-                  ->cascadeOnDelete();
-
-            $table->integer('table_number')->default(0);
+   
+      
             $table->string('invoice_no', 100)->default('');
+              $table->unsignedInteger('queue_no')->default(0);
             $table->string('payment_method', 100)->default('');
+            $table->string('reference_no', 100)->nullable()->default(null);
             $table->text('order_description')->nullable();
 
             $table->decimal('od_amount_due', 9, 2)->default(0.00);

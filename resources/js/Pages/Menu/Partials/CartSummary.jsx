@@ -5,12 +5,9 @@ import { Plus, Minus, X, Printer } from "lucide-react";
 import { useState, useEffect } from "react";
 import { router, usePage } from "@inertiajs/react";
 import { toast } from "sonner";
-import { Banknote, Smartphone } from "lucide-react";
-import LoadingOverlay from "../../Order/Component/LoadingOverlay";
 import CheckoutModal from "./CheckoutModal";
-// ...
 
-export default function CartSummary({ products = [], tableNumber, table_id }) {
+export default function CartSummary({ products = [] }) {
     const { props } = usePage();
     const [paymentMethod, setPaymentMethod] = useState("cash");
     const [cartItems, setCartItems] = useState(products);
@@ -21,7 +18,7 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
     const [discount, setDiscount] = useState(0);
     const [payment, setPayment] = useState(0);
     const [hasAutoPrinted, setHasAutoPrinted] = useState(false);
-
+    const [referenceNo, setReferenceNo] = useState("");
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [isPrintingKitchen, setIsPrintingKitchen] = useState(false);
 
@@ -32,19 +29,13 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
 
     // Check for order data in props
     useEffect(() => {
-        // Check if order exists in flash
         if (props.flash?.order) {
-            console.log("✅ Order found in flash:", props.flash.order);
             setLastOrder(props.flash.order);
             setShowSuccessModal(true);
 
             // Auto-print after a short delay
             if (!hasAutoPrinted && props.flash.order.od_id) {
                 setTimeout(() => {
-                    console.log(
-                        "🖨️ Auto-printing receipt for order:",
-                        props.flash.order.od_id,
-                    );
                     window.open(
                         route("order.print", props.flash.order.od_id),
                         "_blank",
@@ -54,87 +45,6 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
             }
         }
     }, [props.flash]);
-
-    const removeItem = (productId) => {
-        if (!table_id) {
-            toast.error("No table selected");
-            return;
-        }
-
-        const cartItem = cartItems.find(
-            (item) => (item.pd_id || item.id) === productId,
-        );
-
-        if (!cartItem || !cartItem.ct_id) {
-            toast.error("Cart item not found");
-            return;
-        }
-
-        setLoadingItem(productId);
-
-        router.delete(
-            route("cart.destroy", {
-                table_id: table_id,
-                cart: cartItem.ct_id,
-            }),
-            {
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: () => {
-                    toast.success("Item removed from cart");
-                },
-                onError: (errors) => {
-                    toast.error("Failed to remove item");
-                },
-                onFinish: () => {
-                    setLoadingItem(null);
-                },
-            },
-        );
-    };
-
-    const updateQuantity = (productId, change) => {
-        if (!table_id) {
-            toast.error("No table selected");
-            return;
-        }
-
-        const cartItem = cartItems.find(
-            (item) => (item.pd_id || item.id) === productId,
-        );
-
-        if (!cartItem || !cartItem.ct_id) {
-            toast.error("Cart item not found");
-            return;
-        }
-
-        const newQuantity = Math.max(1, (cartItem.ct_qty || 1) + change);
-
-        setLoadingItem(productId);
-
-        router.patch(
-            route("cart.update", {
-                table_id: table_id,
-                cart: cartItem.ct_id,
-            }),
-            {
-                ct_qty: newQuantity,
-            },
-            {
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: () => {
-                    toast.success("Quantity updated");
-                },
-                onError: (errors) => {
-                    toast.error("Failed to update quantity");
-                },
-                onFinish: () => {
-                    setLoadingItem(null);
-                },
-            },
-        );
-    };
 
     const subTotal = cartItems.reduce(
         (sum, product) =>
@@ -149,6 +59,76 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
         (sum, product) => sum + product.ct_qty,
         0,
     );
+
+    // When the checkout modal opens, default the tendered amount to the
+    // amount due — mirrors GCash's behavior, so "Confirm Sale" works
+    // immediately unless the cashier changes it (e.g. customer pays more,
+    // expecting change).
+    useEffect(() => {
+        if (checkoutOpen && paymentMethod === "cash") {
+            setPayment(amountDue);
+        }
+    }, [checkoutOpen]);
+
+    const removeItem = (productId) => {
+        const cartItem = cartItems.find(
+            (item) => (item.pd_id || item.id) === productId,
+        );
+
+        if (!cartItem || !cartItem.ct_id) {
+            toast.error("Cart item not found");
+            return;
+        }
+
+        setLoadingItem(productId);
+
+        router.delete(route("cart.destroy", { cart: cartItem.ct_id }), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                toast.success("Item removed from cart");
+            },
+            onError: () => {
+                toast.error("Failed to remove item");
+            },
+            onFinish: () => {
+                setLoadingItem(null);
+            },
+        });
+    };
+
+    const updateQuantity = (productId, change) => {
+        const cartItem = cartItems.find(
+            (item) => (item.pd_id || item.id) === productId,
+        );
+
+        if (!cartItem || !cartItem.ct_id) {
+            toast.error("Cart item not found");
+            return;
+        }
+
+        const newQuantity = Math.max(1, (cartItem.ct_qty || 1) + change);
+
+        setLoadingItem(productId);
+
+        router.patch(
+            route("cart.update", { cart: cartItem.ct_id }),
+            { ct_qty: newQuantity },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    toast.success("Quantity updated");
+                },
+                onError: () => {
+                    toast.error("Failed to update quantity");
+                },
+                onFinish: () => {
+                    setLoadingItem(null);
+                },
+            },
+        );
+    };
 
     const handlePlaceOrder = () => {
         if (cartItems.length === 0) {
@@ -166,43 +146,47 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
             return;
         }
 
+        if (paymentMethod === "gcash" && !referenceNo.trim()) {
+            toast.error("Please enter the GCash reference number");
+            return;
+        }
+
         setIsPlacingOrder(true);
         setHasAutoPrinted(false);
 
         const orderData = {
             payment_method: paymentMethod,
+            reference_no: paymentMethod === "gcash" ? referenceNo.trim() : null,
             od_amount_due: subTotal,
             od_discount: discount,
             od_total_amt_due: amountDue,
             od_payment: payment,
             od_change: change,
             items: cartItems.map((item) => ({
-                // FIX: fall back to item.id when pd_id isn't present on the
-                // cart item — without this, pd_id could be undefined and
-                // fail backend validation ('items.*.pd_id' => 'required'),
-                // silently killing the order submission.
                 pd_id: item.pd_id || item.id,
                 ct_qty: item.ct_qty,
                 ct_price: Number(item.ct_price || item.pd_price),
             })),
         };
 
-        console.log(
-            "Submitting order data:",
-            JSON.stringify(orderData, null, 2),
-        );
-
-        router.post(route("order.place", table_id), orderData, {
+        router.post(route("order.place"), orderData, {
             preserveScroll: true,
             preserveState: false,
-            onSuccess: (response) => {
+            onSuccess: (page) => {
+                const flash = page.props.flash;
                 setIsPlacingOrder(false);
-                setCheckoutOpen(false); // add this line
-                toast.success("Order placed successfully!");
+
+                if (flash?.error) {
+                    toast.error(flash.error, { duration: 6000 });
+                    return;
+                }
+
+                setCheckoutOpen(false);
+                setReferenceNo("");
+                toast.success(flash?.success || "Order placed successfully!");
             },
             onError: (errors) => {
                 setIsPlacingOrder(false);
-                console.error("Order errors:", errors);
                 const errorMessage =
                     Object.values(errors)[0] || "Failed to place order";
                 toast.error(errorMessage);
@@ -214,15 +198,10 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
     };
 
     const handlePrintKitchen = () => {
-        if (!table_id) {
-            toast.error("No table selected");
-            return;
-        }
-
         setIsPrintingKitchen(true);
 
         router.post(
-            route("order.printKitchen", table_id),
+            route("order.printKitchen"),
             {},
             {
                 preserveScroll: true,
@@ -265,7 +244,6 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                 isOpen={checkoutOpen}
                 onClose={() => setCheckoutOpen(false)}
                 cartItems={cartItems}
-                tableNumber={tableNumber}
                 subTotal={subTotal}
                 discount={discount}
                 setDiscount={setDiscount}
@@ -275,6 +253,8 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                 payment={payment}
                 setPayment={setPayment}
                 change={change}
+                referenceNo={referenceNo}
+                setReferenceNo={setReferenceNo}
                 onConfirm={handlePlaceOrder}
                 isPlacingOrder={isPlacingOrder}
                 onPrintKitchen={handlePrintKitchen}
@@ -316,10 +296,9 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
 
                         <div className="bg-gray-50 rounded-xl p-4 mb-6">
                             <div className="flex justify-between mb-2">
-                                <span className="text-gray-600">Table:</span>
+                                <span className="text-gray-600">Order #:</span>
                                 <span className="font-bold">
-                                    Table{" "}
-                                    {lastOrder.table_number || tableNumber}
+                                    {lastOrder.queue_no}
                                 </span>
                             </div>
                             <div className="flex justify-between mb-2">
@@ -328,6 +307,18 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                     {lastOrder.payment_method || paymentMethod}
                                 </span>
                             </div>
+                            {(lastOrder.payment_method === "gcash" ||
+                                paymentMethod === "gcash") &&
+                                lastOrder.reference_no && (
+                                    <div className="flex justify-between mb-2">
+                                        <span className="text-gray-600">
+                                            Reference #:
+                                        </span>
+                                        <span className="font-bold">
+                                            {lastOrder.reference_no}
+                                        </span>
+                                    </div>
+                                )}
                             <div className="flex justify-between mb-2">
                                 <span className="text-gray-600">Items:</span>
                                 <span className="font-bold">
@@ -372,13 +363,8 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                     <div className="space-y-6 mb-4">
                         {/* Header */}
                         <div className="border-b pb-4 flex items-center justify-between">
-                            <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center">
-                                <span className="text-xl font-bold text-red-700">
-                                    {tableNumber}
-                                </span>
-                            </div>
                             <h2 className="text-xl font-bold text-gray-900">
-                                Order Summary
+                                Current Order
                             </h2>
                             <Badge variant="secondary" className="px-3 py-1">
                                 {itemCount} {itemCount === 1 ? "item" : "items"}
@@ -536,111 +522,9 @@ export default function CartSummary({ products = [], tableNumber, table_id }) {
                                         ₱{amountDue.toFixed(2)}
                                     </span>
                                 </div>
-
-                                {/* {paymentMethod === "cash" && (
-                                    <>
-                                        <div className="flex justify-between items-center">
-                                            <span>Payment:</span>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    onChange={(e) =>
-                                                        setPayment(
-                                                            Number(
-                                                                e.target.value,
-                                                            ) || 0,
-                                                        )
-                                                    }
-                                                    className="w-20 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
-                                                    placeholder="0"
-                                                    step="0.01"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="flex justify-between pt-3">
-                                            <span className="text-md font-bold">
-                                                Change:
-                                            </span>
-                                            <span className="text-md font-bold">
-                                                ₱{change.toFixed(2)}
-                                            </span>
-                                        </div>
-                                    </>
-                                )} */}
                             </div>
                         )}
 
-                        {/* Payment Methods */}
-                        {/* {cartItems.length > 0 && (
-                            <div>
-                                <h4 className="font-medium mb-3">
-                                    Payment Method
-                                </h4>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        onClick={() => {
-                                            setPaymentMethod("cash");
-                                            setPayment(0);
-                                        }}
-                                        className={`p-4 border-2 rounded-xl ${
-                                            paymentMethod === "cash"
-                                                ? "border-green-500 bg-green-50"
-                                                : "border-gray-200 hover:bg-gray-50"
-                                        }`}
-                                    >
-                                        <Banknote
-                                            className={`w-6 h-6 mx-auto mb-2 ${
-                                                paymentMethod === "cash"
-                                                    ? "text-green-600"
-                                                    : "text-gray-600"
-                                            }`}
-                                        />
-                                        <span
-                                            className={`font-medium ${
-                                                paymentMethod === "cash"
-                                                    ? "text-green-700"
-                                                    : "text-gray-700"
-                                            }`}
-                                        >
-                                            Cash
-                                        </span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            setPaymentMethod("gcash");
-                                            setPayment(amountDue);
-                                        }}
-                                        className={`p-4 border-2 rounded-xl ${
-                                            paymentMethod === "gcash"
-                                                ? "border-blue-500 bg-blue-50"
-                                                : "border-gray-200 hover:bg-gray-50"
-                                        }`}
-                                    >
-                                        <Smartphone
-                                            className={`w-6 h-6 mx-auto mb-2 ${
-                                                paymentMethod === "gcash"
-                                                    ? "text-blue-600"
-                                                    : "text-gray-600"
-                                            }`}
-                                        />
-                                        <span
-                                            className={`font-medium ${
-                                                paymentMethod === "gcash"
-                                                    ? "text-blue-700"
-                                                    : "text-gray-700"
-                                            }`}
-                                        >
-                                            GCash
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
-                        )} */}
-
-                        {/* Place Order Button */}
                         {/* Checkout Button */}
                         <Button
                             className="w-full bg-green-600 hover:bg-green-700 h-12 text-base rounded-full"

@@ -13,17 +13,12 @@ export default function CategoryItems({
     children,
     categories = [],
     products = [],
-    tables,
     cartItems = [],
     filters,
 }) {
     const [activeCategory, setActiveCategory] = useState("all");
     const [loadingItem, setLoadingItem] = useState(null);
-    // Store quantities for each product
     const [quantities, setQuantities] = useState({});
-
-    // Get the current table
-    const currentTable = tables;
 
     const foodItems = products.map((product) => ({
         cat_id: product.cat_id,
@@ -48,12 +43,10 @@ export default function CategoryItems({
         0,
     );
 
-    // Initialize quantity for a product
     const getQuantity = (productId) => {
         return quantities[productId] || 1;
     };
 
-    // Update quantity for a product
     const updateQuantity = (productId, change) => {
         setQuantities((prev) => {
             const currentQty = prev[productId] || 1;
@@ -63,24 +56,14 @@ export default function CategoryItems({
     };
 
     const addToCart = (product) => {
-        if (!currentTable) {
-            toast.error("No table selected", {
-                position: "top-center",
-                duration: 3000,
-            });
-            return;
-        }
-
         const quantity = getQuantity(product.pd_id);
 
         setLoadingItem(product.pd_id);
 
         router.post(
-            route("cart.store", currentTable.table_id),
+            route("cart.store"),
             {
                 pd_id: product.pd_id,
-                table_id: currentTable.table_id,
-                table_number: currentTable.t_number,
                 ct_qty: quantity,
                 ct_price: product.pd_price,
             },
@@ -98,7 +81,6 @@ export default function CategoryItems({
                             ),
                         },
                     );
-                    // Reset quantity to 1 after adding
                     setQuantities((prev) => ({ ...prev, [product.pd_id]: 1 }));
                     setLoadingItem(null);
                 },
@@ -124,7 +106,7 @@ export default function CategoryItems({
         setData("search", value);
 
         router.get(
-            route("menu.menu", currentTable?.table_id),
+            route("menu.menu"),
             { search: value },
             {
                 preserveScroll: true,
@@ -337,9 +319,6 @@ export default function CategoryItems({
                                                         (Max: {item.pd_qty})
                                                     </span>
                                                 </label>
-                                                {/* <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                In Stock
-            </span> */}
                                             </div>
 
                                             <div className="flex items-center gap-2">

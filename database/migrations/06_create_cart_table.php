@@ -9,15 +9,10 @@ return new class extends Migration {
         Schema::create('tbl_cart', function (Blueprint $table) {
             $table->id('ct_id');
 
-            $table->unsignedBigInteger('table_id');
-
             $table->unsignedBigInteger('pd_id');
 
-            $table->integer('table_number');
-
-     
-            $table->bigInteger('ct_qty')->default(1); // ✅ FIXED
-            $table->integer('ct_printed_qty')->default(0); // ✅ FIXED
+            $table->bigInteger('ct_qty')->default(1);
+            $table->integer('ct_printed_qty')->default(0);
             $table->decimal('ct_price', 9, 2)->default(0.00);
 
             $table->timestamp('ct_date')->nullable();
@@ -31,8 +26,8 @@ return new class extends Migration {
             $table->Integer('is_print')->default(0);
             $table->string('ct_status', 100)->default('');
             $table->timestamps();
-       
-            $table->softDeletes(); // ✅ better than manual deleted_at
+
+            $table->softDeletes();
         });
     }
 

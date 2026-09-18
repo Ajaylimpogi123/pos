@@ -255,19 +255,67 @@ class PurchaseRequestController extends Controller
     // --- Approval actions ---
 
     public function approve(Request $request, PurchaseRequest $purchaseRequest): RedirectResponse
-    {
-        $validated = $request->validate([
-            'approval_remarks' => ['nullable', 'string'],
+{
+    $validated = $request->validate([
+        'approval_remarks' => ['nullable', 'string'],
+    ]);
+
+    if ($purchaseRequest->status !== 'pending') {
+        return back()->with('error', 'Only pending requests can be approved.');
+    }
+
+    $purchaseOrder = DB::transaction(function () use ($purchaseRequest, $validated) {
+        // Mark the PR approved first (keeps the audit trail: who approved, when, remarks)
+        $purchaseRequest->approve(Auth::user(), $validated['approval_remarks'] ?? null);
+        $purchaseRequest->load('items');
+
+        $po = PurchaseOrder::create([
+            'po_number'              => $this->generatePoNumber(),
+            'purchase_request_id'    => $purchaseRequest->id,
+            'branch_id'              => $purchaseRequest->branch_id,
+            'supplier_id'            => null,
+            'created_by'             => Auth::id(),
+            'order_date'             => now(),
+            'expected_delivery_date' => null,
+            'remarks'                => 'Auto-generated from ' . $purchaseRequest->pr_number,
+            'status'                 => 'pending',
         ]);
 
-        if ($purchaseRequest->status !== 'pending') {
-            return back()->with('error', 'Only pending requests can be approved.');
+        foreach ($purchaseRequest->items as $item) {
+            $po->items()->create([
+                'ingredient_id' => $item->ingredient_id,
+                'supplier_id'   => $item->supplier_id,
+                'item_name'     => $item->item_name,
+                'unit'          => $item->unit,
+                'quantity'      => $item->quantity,
+                // PR only has an estimate — falls back to 0 if none was given,
+                // buyer can correct it on the PO before it's approved/received.
+                'unit_price'    => $item->estimated_unit_price ?? 0,
+            ]);
         }
 
-        $purchaseRequest->approve(Auth::user(), $validated['approval_remarks'] ?? null);
+        $po->recalculateTotal();
 
-        return back()->with('success', 'Purchase request approved.');
-    }
+        // PR is now spoken for — 'converted' prevents it from being
+        // approved/converted again and matches the enum already used
+        // by the manual "Convert to PO" flow.
+        $purchaseRequest->update(['status' => 'converted']);
+
+        return $po;
+    });
+
+    return redirect()
+        ->route('purchase-orders.show', $purchaseOrder)
+        ->with('success', "Purchase request approved and converted to {$purchaseOrder->po_number}.");
+}
+
+private function generatePoNumber(): string
+{
+    $year = now()->format('Y');
+    $count = PurchaseOrder::whereYear('created_at', $year)->count() + 1;
+
+    return sprintf('PO-%s-%05d', $year, $count);
+}
 
     public function reject(Request $request, PurchaseRequest $purchaseRequest): RedirectResponse
     {

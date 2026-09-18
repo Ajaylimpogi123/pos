@@ -68,11 +68,7 @@ export function AppSidebar({ ...props }) {
                 url: route("supplier.index"),
                 icon: LayoutGrid,
             },
-            {
-                title: "Table",
-                url: route("table.index"),
-                icon: LayoutGrid,
-            },
+
             {
                 title: "Category",
                 url: route("category.index"),
@@ -90,7 +86,7 @@ export function AppSidebar({ ...props }) {
             },
             {
                 title: "POS",
-                url: route("menu.index"),
+                url: route("menu.menu"),
                 icon: ClipboardList,
             },
             {

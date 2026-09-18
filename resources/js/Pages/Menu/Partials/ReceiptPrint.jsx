@@ -1,35 +1,22 @@
-import React, { useEffect } from 'react';
-import { Head } from '@inertiajs/react';
+import React, { useEffect } from "react";
+import { Head } from "@inertiajs/react";
 
 export default function ReceiptPrint({ order }) {
     useEffect(() => {
-        console.log("ReceiptPrint component mounted", order);
         // Auto print when component mounts
         window.print();
     }, []);
-
-    const formatDate = (date) => {
-        if (!date) return '';
-        return new Date(date).toLocaleString('en-US', {
-            month: 'short',
-            day: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
 
     const formatCurrency = (amount) => {
         return `₱${parseFloat(amount).toFixed(2)}`;
     };
 
-    // Safely access customer name
-    const customerName = order.customer?.cust_fname || 'Walk-in Customer';
+    const customerName = order.customer?.cust_fname || "Walk-in Customer";
 
     return (
         <>
             <Head title={`Receipt #${order.invoice_no}`} />
-            
+
             <style>{`
                 @media print {
                     body { 
@@ -105,11 +92,22 @@ export default function ReceiptPrint({ order }) {
             </div>
 
             <div className="order-info">
-                <div><span>Invoice #:</span><strong>{order.invoice_no}</strong></div>
-                {/* <div><span>Date:</span><strong>{formatDate(order.od_date)}</strong></div> */}
-                <div><span>Table:</span><strong>{order.table_number}</strong></div>
-                <div><span>Cashier:</span><strong>Staff</strong></div>
-                <div><span>Customer:</span><strong>{customerName}</strong></div>
+                <div>
+                    <span>Invoice #:</span>
+                    <strong>{order.invoice_no}</strong>
+                </div>
+                <div>
+                    <span>Order #:</span>
+                    <strong>{order.queue_no}</strong>
+                </div>
+                <div>
+                    <span>Cashier:</span>
+                    <strong>Staff</strong>
+                </div>
+                <div>
+                    <span>Customer:</span>
+                    <strong>{customerName}</strong>
+                </div>
             </div>
 
             <table>
@@ -125,38 +123,75 @@ export default function ReceiptPrint({ order }) {
                     {order.items && order.items.length > 0 ? (
                         order.items.map((item) => (
                             <tr key={item.oid_id}>
-                                <td>{item.product?.pd_name || 'Product'}</td>
+                                <td>{item.product?.pd_name || "Product"}</td>
                                 <td>{item.oi_qty}</td>
                                 <td>{formatCurrency(item.oi_price)}</td>
-                                <td>{formatCurrency(item.oi_qty * item.oi_price)}</td>
+                                <td>
+                                    {formatCurrency(
+                                        item.oi_qty * item.oi_price,
+                                    )}
+                                </td>
                             </tr>
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="4" style={{textAlign: 'center'}}>No items found</td>
+                            <td colSpan="4" style={{ textAlign: "center" }}>
+                                No items found
+                            </td>
                         </tr>
                     )}
                 </tbody>
             </table>
 
             <div className="totals">
-                <div><span>Subtotal:</span><span>{formatCurrency(order.od_amount_due)}</span></div>
+                <div>
+                    <span>Subtotal:</span>
+                    <span>{formatCurrency(order.od_amount_due)}</span>
+                </div>
                 {parseFloat(order.od_discount) > 0 && (
-                    <div><span>Discount:</span><span>-{formatCurrency(order.od_discount)}</span></div>
+                    <div>
+                        <span>Discount:</span>
+                        <span>-{formatCurrency(order.od_discount)}</span>
+                    </div>
                 )}
-                <div style={{fontWeight:'bold', fontSize:'16px'}}>
+                <div style={{ fontWeight: "bold", fontSize: "16px" }}>
                     <span>TOTAL:</span>
                     <span>{formatCurrency(order.od_total_amt_due)}</span>
                 </div>
-                <div><span>Payment Method:</span><span className="capitalize">{order.payment_method}</span></div>
-                <div><span>Amount Paid:</span><span>{formatCurrency(order.od_payment)}</span></div>
-                <div><span>Change:</span><span>{formatCurrency(order.od_change)}</span></div>
+                <div>
+                    <span>Payment Method:</span>
+                    <span className="capitalize">{order.payment_method}</span>
+                </div>
+                {order.payment_method === "gcash" && order.reference_no && (
+                    <div>
+                        <span>Reference #:</span>
+                        <span>{order.reference_no}</span>
+                    </div>
+                )}
+                <div>
+                    <span>Amount Paid:</span>
+                    <span>{formatCurrency(order.od_payment)}</span>
+                </div>
+                <div>
+                    <span>Change:</span>
+                    <span>{formatCurrency(order.od_change)}</span>
+                </div>
             </div>
 
             <div className="footer">
-                <div style={{fontSize:'14px', fontWeight:'bold', margin:'10px 0'}}>Thank You!</div>
+                <div
+                    style={{
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        margin: "10px 0",
+                    }}
+                >
+                    Thank You!
+                </div>
                 <p>Please come again</p>
-                <p style={{fontSize:'8px', marginTop:'10px'}}>Powered by Your POS System</p>
+                <p style={{ fontSize: "8px", marginTop: "10px" }}>
+                    Powered by Your POS System
+                </p>
             </div>
         </>
     );

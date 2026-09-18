@@ -131,17 +131,6 @@ export default function ShowRequest({ purchaseRequest }) {
                                     </button>
                                 </>
                             )}
-
-                            {purchaseRequest.status === "approved" && (
-                                <Link
-                                    href={route("purchase-orders.create", {
-                                        purchase_request_id: purchaseRequest.id,
-                                    })}
-                                    className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white"
-                                >
-                                    Convert to Purchase Order
-                                </Link>
-                            )}
                         </div>
                     </div>
                 </div>

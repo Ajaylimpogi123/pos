@@ -27,7 +27,7 @@ class DashboardController extends Controller
             ->map(fn($order) => [
                 'od_id' => $order->od_id,
                 'invoice_no' => $order->invoice_no,
-                'table_number' => $order->table_number,
+              'queue_no' => $order->queue_no,
                 'payment_method' => $order->payment_method,
                 'od_total_amt_due' => (float) $order->od_total_amt_due,
                 'created_at' => $order->created_at->toIso8601String(),

@@ -11,13 +11,13 @@ class Order extends Model
 
     protected $table = 'tbl_order';
     protected $primaryKey = 'od_id';
-    
+
     protected $fillable = [
         'cust_id',
-        'table_id',
-        'table_number',
+        'queue_no',
         'invoice_no',
         'payment_method',
+        'reference_no',
         'order_description',
         'od_amount_due',
         'od_discount',
@@ -29,11 +29,9 @@ class Order extends Model
         'is_open',
         'is_print',
         'od_remarks',
-        'od_date',
     ];
 
     protected $casts = [
-        'od_date' => 'datetime',
         'od_amount_due' => 'decimal:2',
         'od_discount' => 'decimal:2',
         'percent_discount' => 'decimal:2',
@@ -45,7 +43,6 @@ class Order extends Model
         'is_print' => 'boolean',
     ];
 
-    // Relationship with OrderItems (plural model name)
     public function items()
     {
         return $this->hasMany(OrderItems::class, 'od_id', 'od_id');
@@ -54,10 +51,5 @@ class Order extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'cust_id', 'cust_id');
-    }
-
-    public function table()
-    {
-        return $this->belongsTo(Table::class, 'table_id', 'table_id');
     }
 }
