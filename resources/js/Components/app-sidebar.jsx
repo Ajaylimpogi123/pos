@@ -99,6 +99,11 @@ export function AppSidebar({ ...props }) {
                 url: route("purchasing.index"),
                 icon: Database,
             },
+            {
+                title: "Printers",
+                url: route("printer.index"),
+                icon: SettingsIcon,
+            },
         ],
         navClouds: [
             {

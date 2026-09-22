@@ -53,7 +53,7 @@ export const columns = [
     },
     {
         id: "actions",
-        cell: ({ row }) => {
+        cell: ({ row, table }) => {
             const supplier = row.original;
 
             return (
@@ -70,7 +70,12 @@ export const columns = [
                             <EditModal supplier={supplier}>Edit</EditModal>
                         </div>
 
-                        <DropdownMenuItem className="pl-2 pr-4 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-md cursor-pointer">
+                        <DropdownMenuItem
+                            className="pl-2 pr-4 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-md cursor-pointer"
+                            onClick={() =>
+                                table.options.meta?.onDelete?.(supplier.id)
+                            }
+                        >
                             Delete
                         </DropdownMenuItem>
                     </DropdownMenuContent>

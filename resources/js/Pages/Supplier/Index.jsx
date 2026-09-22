@@ -39,7 +39,7 @@ export default function Index({ suppliers, filters }) {
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
-                only: ["categories", "filters"],
+                only: ["suppliers", "filters"],
             },
         );
     };
@@ -57,9 +57,9 @@ export default function Index({ suppliers, filters }) {
         );
     };
 
-    const handleDelete = (cat_id) => {
-        if (confirm("Are you sure you want to delete this category?")) {
-            destroy(route("category.destroy", cat_id), {
+    const handleDelete = (id) => {
+        if (confirm("Are you sure you want to delete this supplier?")) {
+            destroy(route("supplier.destroy", id), {
                 preserveScroll: true,
                 onSuccess: () => {
                     // Optional: Show success message
@@ -94,7 +94,7 @@ export default function Index({ suppliers, filters }) {
                                     className="flex items-center gap-2"
                                 >
                                     <Plus className="h-4 w-4" />
-                                    Add Category
+                                    Add Supplier
                                 </Button>
                             </AddModal>
                         </div>
@@ -108,6 +108,7 @@ export default function Index({ suppliers, filters }) {
                                 data={supplierData}
                                 searchable={true}
                                 pagination={true}
+                                onDelete={handleDelete}
                             />
                         </div>
                     </div>

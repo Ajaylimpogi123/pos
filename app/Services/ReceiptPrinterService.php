@@ -4,10 +4,10 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\OrderItems;
-use Mike42\Escpos\Printer;
+use Illuminate\Support\Facades\Log;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
-use Illuminate\Support\Facades\Log;
+use Mike42\Escpos\Printer;
 
 class ReceiptPrinterService
 {
@@ -56,14 +56,13 @@ class ReceiptPrinterService
      *  - MenuController::store()  -> single item, the instant it's added to cart
      *  - OrderController::printKitchen() -> whole cart, from the checkout modal button
      *
-     * @param array $items [['pd_id' => int, 'pd_name' => string, 'ct_qty' => int, 'cat_id' => int|null], ...]
-     * @param string $tableNumber
-     * @param bool $routeByCategory If true, splits items across printers using
-     *                               config('printer.category_routing') — each
-     *                               item array needs a 'cat_id'. If false,
-     *                               everything goes to one printer.
-     * @param string|null $printerName Printer profile to use when $routeByCategory
-     *                                  is false. Defaults to 'kitchen'.
+     * @param  array  $items  [['pd_id' => int, 'pd_name' => string, 'ct_qty' => int, 'cat_id' => int|null], ...]
+     * @param  bool  $routeByCategory  If true, splits items across printers using
+     *                                 config('printer.category_routing') — each
+     *                                 item array needs a 'cat_id'. If false,
+     *                                 everything goes to one printer.
+     * @param  string|null  $printerName  Printer profile to use when $routeByCategory
+     *                                    is false. Defaults to 'kitchen'.
      * @return array<string,bool> Map of printer name => success.
      */
     public function printKitchenPreview(
@@ -72,8 +71,9 @@ class ReceiptPrinterService
         bool $routeByCategory = false,
         ?string $printerName = null
     ): array {
-        if (!$routeByCategory) {
+        if (! $routeByCategory) {
             $printerName ??= 'kitchen';
+
             return [$printerName => $this->printKitchenPreviewTo($printerName, $items, $tableNumber)];
         }
 
@@ -94,110 +94,134 @@ class ReceiptPrinterService
         return $results;
     }
 
-   /**
- * Check whether a specific named printer is currently reachable,
- * without printing anything. Explicitly finalizes the connector
- * after the check — since we're not printing, nothing else will
- * close it, and leaving it open triggers a "did you forget to
- * close the printer?" notice when PHP garbage-collects it.
- */
-public function isPrinterConnected(string $printerName): bool
-{
-    $connector = $this->resolveConnector($printerName);
+    /**
+     * Check whether a specific named printer is currently reachable,
+     * without printing anything. Explicitly finalizes the connector
+     * after the check — since we're not printing, nothing else will
+     * close it, and leaving it open triggers a "did you forget to
+     * close the printer?" notice when PHP garbage-collects it.
+     */
+    public function isPrinterConnected(string $printerName): bool
+    {
+        $connector = $this->resolveConnector($printerName);
 
-    if (!$connector) {
-        return false;
+        if (! $connector) {
+            return false;
+        }
+
+        try {
+            $connector->finalize();
+        } catch (\Exception $e) {
+            // Already got a successful connection — a finalize hiccup here
+            // doesn't change the reachability result, just log it.
+            Log::warning("Connector finalize warning for '{$printerName}': ".$e->getMessage());
+        }
+
+        return true;
     }
-
-    try {
-        $connector->finalize();
-    } catch (\Exception $e) {
-        // Already got a successful connection — a finalize hiccup here
-        // doesn't change the reachability result, just log it.
-        Log::warning("Connector finalize warning for '{$printerName}': " . $e->getMessage());
-    }
-
-    return true;
-}
 
     private function printItemsTo(string $printerName, Order $order, $items): bool
     {
         $profile = config("printer.printers.{$printerName}");
 
-        if (!$profile || !($profile['enabled'] ?? false)) {
+        if (! $profile || ! ($profile['enabled'] ?? false)) {
             return false;
         }
 
         $connector = $this->resolveConnector($printerName);
 
-        if (!$connector) {
+        if (! $connector) {
             Log::warning("Printer '{$printerName}' not reachable, skipping print.", [
                 'od_id' => $order->od_id,
             ]);
+
+            return false;
+        }
+
+        try {
+            $header = [
+                'store_name' => config('printer.store_name'),
+                'invoice_no' => $order->invoice_no,
+                'created_at' => $order->created_at->format('Y-m-d H:i'),
+                'total' => (float) $order->od_total_amt_due,
+                'payment_method' => $order->payment_method,
+                'payment' => (float) $order->od_payment,
+                'change' => (float) $order->od_change,
+            ];
+
+            $itemsArray = collect($items)->map(fn ($item) => [
+                'name' => $item->products->pd_name ?? 'Item',
+                'qty' => $item->oi_qty,
+                'price' => (float) $item->oi_price,
+            ])->all();
+
+            $printer = new Printer($connector);
+            $this->buildReceipt($printer, $header, $itemsArray, $printerName);
+            $printer->close();
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error("Print to '{$printerName}' failed: ".$e->getMessage(), [
+                'od_id' => $order->od_id,
+            ]);
+
+            return false;
+        }
+    }
+
+    private function printKitchenPreviewTo(string $printerName, array $items, string $tableNumber): bool
+    {
+        $profile = config("printer.printers.{$printerName}");
+
+        if (! $profile) {
+            Log::warning("Printer '{$printerName}' has no config entry in printer.php.", [
+                'table_number' => $tableNumber,
+            ]);
+
+            return false;
+        }
+
+        if (! ($profile['enabled'] ?? false)) {
+            Log::warning("Printer '{$printerName}' is disabled (enabled=false in config/.env).", [
+                'table_number' => $tableNumber,
+            ]);
+
+            return false;
+        }
+
+        $connector = $this->resolveConnector($printerName);
+
+        if (! $connector) {
+            Log::warning("Printer '{$printerName}' unreachable — check IP/port and that it's powered on.", [
+                'table_number' => $tableNumber,
+                'method' => $profile['method'] ?? 'unknown',
+                'network_ip' => $profile['network_ip'] ?? null,
+                'network_port' => $profile['network_port'] ?? null,
+            ]);
+
             return false;
         }
 
         try {
             $printer = new Printer($connector);
-            $this->buildReceipt($printer, $order, $items, $printerName);
+            $this->buildKitchenTicket($printer, $items, $tableNumber, $printerName);
             $printer->close();
+
             return true;
         } catch (\Exception $e) {
-            Log::error("Print to '{$printerName}' failed: " . $e->getMessage(), [
-                'od_id' => $order->od_id,
+            Log::error("Kitchen print to '{$printerName}' failed mid-print: ".$e->getMessage(), [
+                'table_number' => $tableNumber,
             ]);
+
             return false;
         }
     }
-
-   private function printKitchenPreviewTo(string $printerName, array $items, string $tableNumber): bool
-{
-    $profile = config("printer.printers.{$printerName}");
-
-    if (!$profile) {
-        Log::warning("Printer '{$printerName}' has no config entry in printer.php.", [
-            'table_number' => $tableNumber,
-        ]);
-        return false;
-    }
-
-    if (!($profile['enabled'] ?? false)) {
-        Log::warning("Printer '{$printerName}' is disabled (enabled=false in config/.env).", [
-            'table_number' => $tableNumber,
-        ]);
-        return false;
-    }
-
-    $connector = $this->resolveConnector($printerName);
-
-    if (!$connector) {
-        Log::warning("Printer '{$printerName}' unreachable — check IP/port and that it's powered on.", [
-            'table_number' => $tableNumber,
-            'method' => $profile['method'] ?? 'unknown',
-            'network_ip' => $profile['network_ip'] ?? null,
-            'network_port' => $profile['network_port'] ?? null,
-        ]);
-        return false;
-    }
-
-    try {
-        $printer = new Printer($connector);
-        $this->buildKitchenTicket($printer, $items, $tableNumber, $printerName);
-        $printer->close();
-        return true;
-    } catch (\Exception $e) {
-        Log::error("Kitchen print to '{$printerName}' failed mid-print: " . $e->getMessage(), [
-            'table_number' => $tableNumber,
-        ]);
-        return false;
-    }
-}
 
     private function resolveConnector(string $printerName)
     {
         $profile = config("printer.printers.{$printerName}");
 
-        if (!$profile) {
+        if (! $profile) {
             return null;
         }
 
@@ -230,7 +254,7 @@ public function isPrinterConnected(string $printerName): bool
 
         $socket = @fsockopen($ip, $port, $errno, $errstr, $timeout);
 
-        if (!$socket) {
+        if (! $socket) {
             return null;
         }
 
@@ -243,31 +267,35 @@ public function isPrinterConnected(string $printerName): bool
         }
     }
 
-    private function buildReceipt(Printer $printer, Order $order, $items, string $printerName): void
+    /**
+     * @param  array  $header  Keys: store_name, invoice_no, created_at, total,
+     *                         payment_method, payment, change.
+     * @param  array  $items  List of ['name' => string, 'qty' => int, 'price' => float].
+     */
+    private function buildReceipt(Printer $printer, array $header, array $items, string $printerName): void
     {
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->setEmphasis(true);
-        $printer->text(config('printer.store_name') . "\n");
+        $printer->text($header['store_name']."\n");
         $printer->setEmphasis(false);
 
         if ($printerName !== config('printer.default')) {
             $printer->setEmphasis(true);
-            $printer->text(strtoupper($printerName) . " TICKET\n");
+            $printer->text(strtoupper($printerName)." TICKET\n");
             $printer->setEmphasis(false);
         }
 
-        $printer->text("Table {$order->table_number}\n");
-        $printer->text("Invoice: {$order->invoice_no}\n");
-        $printer->text($order->created_at->format('Y-m-d H:i') . "\n");
-        $printer->text(str_repeat('-', 32) . "\n");
+        $printer->text("Invoice: {$header['invoice_no']}\n");
+        $printer->text($header['created_at']."\n");
+        $printer->text(str_repeat('-', 32)."\n");
 
         $printer->setJustification(Printer::JUSTIFY_LEFT);
 
         foreach ($items as $item) {
-            $name = $item->products->pd_name ?? 'Item';
-            $qty = $item->oi_qty;
-            $price = number_format($item->oi_price, 2);
-            $lineTotal = number_format($item->oi_price * $qty, 2);
+            $name = $item['name'] ?? 'Item';
+            $qty = $item['qty'];
+            $price = number_format($item['price'], 2);
+            $lineTotal = number_format($item['price'] * $qty, 2);
 
             $printer->text(sprintf("%-20s %2d x %6s\n", $name, $qty, $price));
             $printer->setJustification(Printer::JUSTIFY_RIGHT);
@@ -276,13 +304,13 @@ public function isPrinterConnected(string $printerName): bool
         }
 
         if ($printerName === config('printer.default')) {
-            $printer->text(str_repeat('-', 32) . "\n");
+            $printer->text(str_repeat('-', 32)."\n");
             $printer->setJustification(Printer::JUSTIFY_RIGHT);
             $printer->setEmphasis(true);
-            $printer->text("TOTAL: P" . number_format($order->od_total_amt_due, 2) . "\n");
+            $printer->text('TOTAL: P'.number_format($header['total'], 2)."\n");
             $printer->setEmphasis(false);
-            $printer->text("Paid ({$order->payment_method}): P" . number_format($order->od_payment, 2) . "\n");
-            $printer->text("Change: P" . number_format($order->od_change, 2) . "\n");
+            $printer->text("Paid ({$header['payment_method']}): P".number_format($header['payment'], 2)."\n");
+            $printer->text('Change: P'.number_format($header['change'], 2)."\n");
         }
 
         $printer->feed(2);
@@ -290,6 +318,72 @@ public function isPrinterConnected(string $printerName): bool
         $printer->text("Thank you!\n");
         $printer->feed(3);
         $printer->cut();
+    }
+
+    /**
+     * Short connectivity/test ticket — used for the manual "Test Print"
+     * button on the Printers admin page, both in direct mode and via the
+     * queue/agent path (printFromPayload dispatches here for pj_type='test').
+     */
+    private function buildTestTicket(Printer $printer, string $printerName): void
+    {
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setEmphasis(true);
+        $printer->text("TEST PRINT\n");
+        $printer->setEmphasis(false);
+        $printer->text(strtoupper($printerName)."\n");
+        $printer->text(now()->format('Y-m-d H:i:s')."\n");
+        $printer->feed(3);
+        $printer->cut();
+    }
+
+    /**
+     * The only method the LAN print agent calls (via the /print-agent/jobs/*
+     * API). Resolves the named printer exactly like the direct-print paths
+     * do, then dispatches to the same ESC/POS-building code so output is
+     * identical whether printing happened synchronously or via the queue.
+     * Never throws — every failure is caught, logged, and surfaces as false.
+     */
+    public function printFromPayload(string $printerName, string $type, array $payload): bool
+    {
+        $profile = config("printer.printers.{$printerName}");
+
+        if (! $profile || ! ($profile['enabled'] ?? false)) {
+            Log::warning("Printer '{$printerName}' not enabled/configured, skipping queued print.", [
+                'type' => $type,
+            ]);
+
+            return false;
+        }
+
+        $connector = $this->resolveConnector($printerName);
+
+        if (! $connector) {
+            Log::warning("Printer '{$printerName}' not reachable, skipping queued print.", [
+                'type' => $type,
+            ]);
+
+            return false;
+        }
+
+        try {
+            $printer = new Printer($connector);
+
+            match ($type) {
+                'receipt' => $this->buildReceipt($printer, $payload['header'] ?? [], $payload['items'] ?? [], $printerName),
+                'kitchen' => $this->buildKitchenTicket($printer, $payload['items'] ?? [], $payload['ticket_tag'] ?? '', $printerName),
+                'test' => $this->buildTestTicket($printer, $printerName),
+                default => throw new \InvalidArgumentException("Unknown print job type '{$type}'."),
+            };
+
+            $printer->close();
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error("Queued print ('{$type}') to '{$printerName}' failed: ".$e->getMessage());
+
+            return false;
+        }
     }
 
     /**
@@ -301,12 +395,12 @@ public function isPrinterConnected(string $printerName): bool
     {
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->setEmphasis(true);
-        $printer->text(strtoupper($printerName) . " TICKET\n");
+        $printer->text(strtoupper($printerName)." TICKET\n");
         $printer->setEmphasis(false);
 
         $printer->text("Table {$tableNumber}\n");
-        $printer->text(now()->format('Y-m-d H:i') . "\n");
-        $printer->text(str_repeat('-', 32) . "\n");
+        $printer->text(now()->format('Y-m-d H:i')."\n");
+        $printer->text(str_repeat('-', 32)."\n");
 
         $printer->setJustification(Printer::JUSTIFY_LEFT);
 
@@ -320,5 +414,4 @@ public function isPrinterConnected(string $printerName): bool
         $printer->feed(3);
         $printer->cut();
     }
-    
 }

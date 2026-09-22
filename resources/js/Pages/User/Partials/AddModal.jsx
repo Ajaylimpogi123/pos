@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import InputError from "@/Components/InputError";
 import useAddUser from "../Hooks/useAddUser";
 
-export default function AddUserModal({ children }) {
+export default function AddUserModal({ children, roles = [] }) {
     const {
         open,
         openModal,
@@ -22,8 +22,7 @@ export default function AddUserModal({ children }) {
         errors,
         processing,
         handleSubmit,
-        handleFileChange,
-        handleCategoryChange,
+        handleRoleChange,
     } = useAddUser();
 
     return (
@@ -35,100 +34,84 @@ export default function AddUserModal({ children }) {
                 <DialogContent className="sm:max-w-[425px] rounded-md">
                     <form onSubmit={handleSubmit}>
                         <DialogHeader className="pb-4">
-                            <DialogTitle>Add Product</DialogTitle>
+                            <DialogTitle>Add User</DialogTitle>
                         </DialogHeader>
 
                         <div className="grid gap-4">
-            
-
-                            {/* Product Name */}
+                            {/* Name */}
                             <div className="grid gap-3">
-                                <Label>Product Name</Label>
+                                <Label>Name</Label>
                                 <Input
-                                    value={data.pd_name}
+                                    value={data.name}
                                     onChange={(e) =>
-                                        setData("pd_name", e.target.value)
+                                        setData("name", e.target.value)
                                     }
                                 />
-                                <InputError message={errors.pd_name} />
+                                <InputError message={errors.name} />
                             </div>
 
-                            {/* Description */}
+                            {/* Email */}
                             <div className="grid gap-3">
-                                <Label>Product Description</Label>
+                                <Label>Email</Label>
                                 <Input
-                                    value={data.pd_description}
+                                    type="email"
+                                    value={data.email}
+                                    onChange={(e) =>
+                                        setData("email", e.target.value)
+                                    }
+                                />
+                                <InputError message={errors.email} />
+                            </div>
+
+                            {/* Role */}
+                            <div className="grid gap-3">
+                                <Label>Role</Label>
+                                <select
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={data.role_id}
+                                    onChange={(e) =>
+                                        handleRoleChange(e.target.value)
+                                    }
+                                >
+                                    <option value="">Select a role</option>
+                                    {roles.map((role) => (
+                                        <option key={role.id} value={role.id}>
+                                            {role.role_name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <InputError message={errors.role_id} />
+                            </div>
+
+                            {/* Password */}
+                            <div className="grid gap-3">
+                                <Label>Password</Label>
+                                <Input
+                                    type="password"
+                                    value={data.password}
+                                    onChange={(e) =>
+                                        setData("password", e.target.value)
+                                    }
+                                />
+                                <InputError message={errors.password} />
+                            </div>
+
+                            {/* Confirm Password */}
+                            <div className="grid gap-3">
+                                <Label>Confirm Password</Label>
+                                <Input
+                                    type="password"
+                                    value={data.password_confirmation}
                                     onChange={(e) =>
                                         setData(
-                                            "pd_description",
+                                            "password_confirmation",
                                             e.target.value,
                                         )
                                     }
                                 />
-                                <InputError message={errors.pd_description} />
-                            </div>
-
-                            {/* Price*/}
-                            <div className="grid gap-3">
-                                <Label>Selling Price</Label>
-                                <Input
-                                    type="number"
-                                    value={data.pd_price}
-                                    onChange={(e) =>
-                                        setData("pd_price", e.target.value)
-                                    }
+                                <InputError
+                                    message={errors.password_confirmation}
                                 />
-                                <InputError message={errors.pd_price} />
-                            </div>
-
-                            {/* Cost*/}
-                            <div className="grid gap-3">
-                                <Label>Cost </Label>
-                                <Input
-                                    type="number"
-                                    value={data.pd_cost}
-                                    onChange={(e) =>
-                                        setData("pd_cost", e.target.value)
-                                    }
-                                />
-                                <InputError message={errors.pd_cost} />
-                            </div>
-
-                            {/* Qty*/}
-                            <div className="grid gap-3">
-                                <Label>Qty</Label>
-                                <Input
-                                    type="number"
-                                    value={data.pd_qty}
-                                    onChange={(e) =>
-                                        setData("pd_qty", e.target.value)
-                                    }
-                                />
-                                <InputError message={errors.pd_qty} />
-                            </div>
-
-                            {/* Minimum Qty */}
-                            <div className="grid gap-3">
-                                <Label>Threshold</Label>
-                                <Input
-                                    type="number"
-                                    value={data.pd_mqty}
-                                    onChange={(e) =>
-                                        setData("pd_mqty", e.target.value)
-                                    }
-                                />
-                                <InputError message={errors.pd_mqty} />
-                            </div>
-
-                            {/* Image */}
-                            <div className="grid gap-2">
-                                <Label>Product Image</Label>
-                                <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleFileChange}
-                                />
-                                <InputError message={errors.pd_image} />
                             </div>
                         </div>
 

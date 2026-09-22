@@ -6,14 +6,13 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import InputError from "@/Components/InputError";
-import useEditModal from "../Hooks/useEditUser";
+import useEditUser from "../Hooks/useEditUser";
 
-export default function EditUserModal({ user, children, categories }) {
+export default function EditUserModal({ user, children, roles = [] }) {
     const {
         open,
         openModal,
@@ -23,8 +22,8 @@ export default function EditUserModal({ user, children, categories }) {
         errors,
         processing,
         handleSubmit,
-        handleFileChange,
-    } = useEditModal(user);
+        handleRoleChange,
+    } = useEditUser(user);
 
     return (
         <>
@@ -33,142 +32,88 @@ export default function EditUserModal({ user, children, categories }) {
 
             <Dialog open={open} onOpenChange={closeModal}>
                 <DialogContent className="sm:max-w-[425px] rounded-md">
-                    <form onSubmit={handleSubmit} >
+                    <form onSubmit={handleSubmit}>
                         <DialogHeader>
                             <DialogTitle className="mb-2">
-                                Edit user
+                                Edit User
                             </DialogTitle>
-                            {/* <DialogDescription>
-                                Update user details
-                            </DialogDescription> */}
                         </DialogHeader>
 
                         <div className="grid gap-4">
-                            {/* Category - ADD THIS */}
+                            {/* Name */}
                             <div className="grid gap-2">
-                                <Label>Category</Label>
-                                <select
-                                    value={data.cat_id}
+                                <Label>Name</Label>
+                                <Input
+                                    value={data.name}
                                     onChange={(e) =>
-                                        setData("cat_id", e.target.value)
+                                        setData("name", e.target.value)
+                                    }
+                                />
+                                <InputError message={errors.name} />
+                            </div>
+
+                            {/* Email */}
+                            <div className="grid gap-2">
+                                <Label>Email</Label>
+                                <Input
+                                    type="email"
+                                    value={data.email}
+                                    onChange={(e) =>
+                                        setData("email", e.target.value)
+                                    }
+                                />
+                                <InputError message={errors.email} />
+                            </div>
+
+                            {/* Role */}
+                            <div className="grid gap-2">
+                                <Label>Role</Label>
+                                <select
+                                    value={data.role_id}
+                                    onChange={(e) =>
+                                        handleRoleChange(e.target.value)
                                     }
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    <option value="">Select a category</option>
-                                    {categories?.map((cat) => (
-                                        <option
-                                            key={cat.cat_id}
-                                            value={cat.cat_id}
-                                        >
-                                            {cat.cat_name}
+                                    <option value="">Select a role</option>
+                                    {roles.map((role) => (
+                                        <option key={role.id} value={role.id}>
+                                            {role.role_name}
                                         </option>
                                     ))}
                                 </select>
-                                <InputError message={errors.cat_id} />
-                            </div>
-                            {/* user Name */}
-                            <div className="grid gap-2">
-                                <Label>user Name</Label>
-                                <Input
-                                    value={data.pd_name}
-                                    onChange={(e) =>
-                                        setData("pd_name", e.target.value)
-                                    }
-                                />
-                                <InputError message={errors.pd_name} />
+                                <InputError message={errors.role_id} />
                             </div>
 
-                            {/* Description */}
+                            {/* Password */}
                             <div className="grid gap-2">
-                                <Label>user Description</Label>
+                                <Label>New Password (optional)</Label>
                                 <Input
-                                    value={data.pd_description}
+                                    type="password"
+                                    value={data.password}
+                                    onChange={(e) =>
+                                        setData("password", e.target.value)
+                                    }
+                                />
+                                <InputError message={errors.password} />
+                            </div>
+
+                            {/* Confirm Password */}
+                            <div className="grid gap-2">
+                                <Label>Confirm New Password</Label>
+                                <Input
+                                    type="password"
+                                    value={data.password_confirmation}
                                     onChange={(e) =>
                                         setData(
-                                            "pd_description",
+                                            "password_confirmation",
                                             e.target.value,
                                         )
                                     }
                                 />
-                                <InputError message={errors.pd_description} />
-                            </div>
-                            {/* Qty */}
-                            <div className="grid gap-2">
-                                <Label>Selling Price</Label>
-                                <Input
-                                    type="number"
-                                    value={data.pd_price}
-                                    onChange={(e) =>
-                                        setData("pd_price", e.target.value)
-                                    }
+                                <InputError
+                                    message={errors.password_confirmation}
                                 />
-                                <InputError message={errors.pd_price} />
-                            </div>
-                            {/* Qty */}
-                            <div className="grid gap-2">
-                                <Label>Cost</Label>
-                                <Input
-                                    type="number"
-                                    value={data.pd_cost}
-                                    onChange={(e) =>
-                                        setData("pd_cost", e.target.value)
-                                    }
-                                />
-                                <InputError message={errors.pd_cost} />
-                            </div>
-                            {/* Qty */}
-                            <div className="grid gap-2">
-                                <Label>user Qty</Label>
-                                <Input
-                                    type="number"
-                                    value={data.pd_qty}
-                                    onChange={(e) =>
-                                        setData("pd_qty", e.target.value)
-                                    }
-                                />
-                                <InputError message={errors.pd_qty} />
-                            </div>
-                            {/* Minimum Qty */}
-                            <div className="grid gap-2">
-                                <Label>Threshold</Label>
-                                <Input
-                                    type="number"
-                                    value={data.pd_mqty}
-                                    onChange={(e) =>
-                                        setData("pd_mqty", e.target.value)
-                                    }
-                                />
-                                <InputError message={errors.pd_mqty} />
-                            </div>
-
-                            {/* Image */}
-                            <div className="grid gap-2">
-                                <Label>user Image</Label>
-                                <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleFileChange}
-                                />
-
-                                {user.pd_image && !data.pd_image && (
-                                    <div className="mt-2">
-                                        <p className="text-xs text-gray-500">
-                                            Current image:
-                                        </p>
-                                        <img
-                                            src={`/storage/${user.pd_image}`}
-                                            className="w-20 h-20 object-cover rounded"
-                                        />
-                                    </div>
-                                )}
-
-                                {data.pd_image instanceof File && (
-                                    <p className="text-xs text-green-500">
-                                        New image selected: {data.pd_image.name}
-                                    </p>
-                                )}
-
-                                <InputError message={errors.pd_image} />
                             </div>
                         </div>
 

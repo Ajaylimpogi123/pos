@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, Eye, MoreVertical, User } from "lucide-react";
 import EditModal from "./EditModal";
+import { router } from "@inertiajs/react";
+import { toast } from "sonner";
 
 import {
     DropdownMenu,
@@ -10,13 +12,29 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function Card({ children, users }) {
+export default function Card({ children, users, roles = [] }) {
     const handleDelete = (id) => {
-        if (confirm("Are you sure you want to delete this contact?")) {
-            destroy(route("user.destroy", id), {
+        if (confirm("Are you sure you want to delete this user?")) {
+            router.delete(route("user.destroy", id), {
                 preserveScroll: true,
                 onSuccess: () => {
-                    Alert("user deleted successfully.");
+                    toast.success("User deleted successfully!", {
+                        duration: 3000,
+                        position: "top-center",
+                    });
+                },
+                onError: (errors) => {
+                    const errorMessage =
+                        Object.values(errors)[0] || "Failed to delete user";
+                    toast.error(errorMessage, {
+                        duration: 4000,
+                        position: "top-center",
+                        style: {
+                            background: "#ef4444",
+                            color: "white",
+                            border: "none",
+                        },
+                    });
                 },
             });
         }
@@ -79,7 +97,7 @@ export default function Card({ children, users }) {
                     </Button>
 
                     {/* Edit button with modal */}
-                    <EditModal user={user}>
+                    <EditModal user={user} roles={roles}>
                         <Button
                             variant="ghost"
                             size="sm"

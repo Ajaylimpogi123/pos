@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export function DataTable({ columns, data }) {
+export function DataTable({ columns, data, onDelete }) {
     const [sorting, setSorting] = useState([]);
     const [columnFilters, setColumnFilters] = useState([]);
 
@@ -35,6 +35,9 @@ export function DataTable({ columns, data }) {
         state: {
             sorting,
             columnFilters,
+        },
+        meta: {
+            onDelete,
         },
     });
 

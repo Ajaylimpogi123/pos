@@ -213,6 +213,10 @@ export default function CartSummary({ products = [] }) {
                     } else if (flash?.success) {
                         toast.success(flash.success);
                     }
+
+                    if (flash?.print_jobs?.length) {
+                        pollPrintJobs(flash.print_jobs);
+                    }
                 },
                 onError: (errors) => {
                     const msg =
@@ -223,6 +227,101 @@ export default function CartSummary({ products = [] }) {
                 onFinish: () => setIsPrintingKitchen(false),
             },
         );
+    };
+
+    // Polls the print-jobs status endpoint for queued kitchen tickets
+    // (PRINTER_MODE=queue, e.g. the VPS deployment) every ~2s, showing a
+    // toast per job as it moves through queued -> printing -> printed/failed.
+    // Stops once every job has reached a terminal state or after ~30s.
+    const pollPrintJobs = (jobIds) => {
+        const toastId = `print-jobs-${jobIds.join("-")}`;
+        const startedAt = Date.now();
+        const seenTerminal = new Set();
+
+        toast.loading("Sending kitchen ticket to printer...", {
+            id: toastId,
+        });
+
+        const interval = setInterval(() => {
+            const timedOut = Date.now() - startedAt > 30000;
+
+            fetch(`${route("print-jobs.status")}?ids=${jobIds.join(",")}`, {
+                headers: { Accept: "application/json" },
+            })
+                .then((res) => res.json())
+                .then((jobs) => {
+                    const allTerminal = jobs.every(
+                        (job) =>
+                            job.pj_status === "success" ||
+                            job.pj_status === "failed",
+                    );
+                    const anyFailed = jobs.some(
+                        (job) => job.pj_status === "failed",
+                    );
+
+                    jobs.forEach((job) => {
+                        if (
+                            (job.pj_status === "success" ||
+                                job.pj_status === "failed") &&
+                            !seenTerminal.has(job.pj_id)
+                        ) {
+                            seenTerminal.add(job.pj_id);
+                        }
+                    });
+
+                    if (allTerminal || timedOut) {
+                        clearInterval(interval);
+
+                        if (anyFailed) {
+                            const failedJob = jobs.find(
+                                (job) => job.pj_status === "failed",
+                            );
+                            toast.error(
+                                failedJob?.pj_error ||
+                                    "Kitchen ticket failed to print.",
+                                {
+                                    id: toastId,
+                                    action: {
+                                        label: "Retry",
+                                        onClick: () =>
+                                            router.post(
+                                                route(
+                                                    "print-jobs.retry",
+                                                    failedJob.pj_id,
+                                                ),
+                                                {},
+                                                {
+                                                    preserveScroll: true,
+                                                    onSuccess: () =>
+                                                        toast.success(
+                                                            "Retry queued.",
+                                                        ),
+                                                },
+                                            ),
+                                    },
+                                },
+                            );
+                        } else if (timedOut) {
+                            toast.message(
+                                "Still printing — check the printer status page if this persists.",
+                                { id: toastId },
+                            );
+                        } else {
+                            toast.success("Kitchen ticket printed.", {
+                                id: toastId,
+                            });
+                        }
+                    } else {
+                        toast.loading("Printing kitchen ticket...", {
+                            id: toastId,
+                        });
+                    }
+                })
+                .catch(() => {
+                    // Transient network hiccup — let the interval retry on
+                    // the next tick rather than surfacing an error toast.
+                });
+        }, 2000);
     };
 
     const handlePrintReceipt = () => {

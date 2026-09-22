@@ -19,8 +19,7 @@ import {
 } from "@/components/ui/select";
 
 import Card from "./Partials/Card";
-import { handler } from "tailwindcss-animate";
-export default function Index({ users, filters }) {
+export default function Index({ users, filters, roles }) {
     const {
         data,
         setData,
@@ -35,7 +34,7 @@ export default function Index({ users, filters }) {
         const value = e.target.value;
         setData("search", value);
         router.get(
-            route("product.index"),
+            route("user.index"),
             { search: value },
             {
                 preserveState: true,
@@ -49,7 +48,7 @@ export default function Index({ users, filters }) {
     const handleCategoryChange = (value) => {
         setData("search", value);
         router.get(
-            route("product.index"),
+            route("user.index"),
             { search: data.search },
             {
                 preserveState: true,
@@ -63,13 +62,13 @@ export default function Index({ users, filters }) {
     const clearSearch = () => {
         setData("search", "");
         router.get(
-            route("product.index"),
+            route("user.index"),
             { search: "" },
             {
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
-                only: ["product", "filters"],
+                only: ["users", "filters"],
             },
         );
     };
@@ -91,16 +90,16 @@ export default function Index({ users, filters }) {
                                     Manage your users and organization
                                 </p>
                             </div>
-                            {/* <AddModal>
+                            <AddModal roles={roles}>
                                 {" "}
                                 <Button
                                     size="sm"
                                     className="flex items-center gap-2"
                                 >
                                     <Plus className="h-4 w-4" />
-                                    Add Product
+                                    Add User
                                 </Button>
-                            </AddModal> */}
+                            </AddModal>
                         </div>
                     </div>
 
@@ -133,7 +132,7 @@ export default function Index({ users, filters }) {
                         </div>
                     </div>
                     {/* Content Grid */}
-                    <Card users={users} />
+                    <Card users={users} roles={roles} />
                 </div>
             </div>
         </AuthenticatedLayout>

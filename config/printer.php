@@ -1,6 +1,13 @@
 <?php
 
 return [
+    // 'direct' (default, on-prem/LAN deployments): print synchronously over
+    // TCP/COM straight from the web request, exactly as before.
+    // 'queue': hand the job off to tbl_print_job for a LAN-side print agent
+    // to pick up over HTTPS polling — used when Laravel runs somewhere
+    // (e.g. a VPS) that has no network route to the printers.
+    'mode' => env('PRINTER_MODE', 'direct'),
+
     // Which profile printReceipt() uses when no printer name is given
     'default' => env('PRINTER_DEFAULT', 'cashier'),
 
@@ -31,7 +38,7 @@ return [
             'method' => env('PRINTER_BAR_METHOD', 'network'),
             'com_port' => env('PRINTER_BAR_COM_PORT', 'COM5'),
             'com_baud' => env('PRINTER_BAR_BAUD', 9600),
-            'network_ip' => env('PRINTER_BAR_IP', '192.168.1.102'),
+            'network_ip' => env('PRINTER_BAR_IP', '192.168.1.103'),
             'network_port' => env('PRINTER_BAR_PORT', 9100),
         ],
 
