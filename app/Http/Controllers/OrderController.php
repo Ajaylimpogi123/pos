@@ -157,21 +157,30 @@ class OrderController extends Controller
             // here must only be logged — it must never fall through to the
             // outer catch below, which calls DB::rollBack() and would be
             // wrong (and confusing) to run after a successful commit.
+            // The outcome IS still flashed back (receipt_print_failed /
+            // receipt_print_job_id) purely so the cashier gets a UI
+            // notification — it never affects whether the order succeeds.
+            $receiptPrintFailed = false;
+            $receiptPrintJobId = null;
+
             try {
                 if (config('printer.mode') === 'direct') {
-                    app(\App\Services\ReceiptPrinterService::class)->printReceipt($order);
+                    $receiptPrintFailed = ! app(\App\Services\ReceiptPrinterService::class)->printReceipt($order);
                 } else {
-                    app(\App\Services\PrintJobService::class)->enqueueReceipt($order);
+                    $receiptPrintJobId = app(\App\Services\PrintJobService::class)->enqueueReceipt($order)->pj_id;
                 }
             } catch (\Throwable $e) {
                 Log::error('Receipt print/enqueue failed (order still placed): '.$e->getMessage(), ['od_id' => $order->od_id]);
+                $receiptPrintFailed = true;
             }
 
             $order->load('items.products', 'items.ingredients.ingredient');
 
             return redirect()->route('menu.menu')
                 ->with('success', 'Order placed successfully!')
-                ->with('order', $order);
+                ->with('order', $order)
+                ->with('receipt_print_failed', $receiptPrintFailed)
+                ->with('receipt_print_job_id', $receiptPrintJobId);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();

@@ -69,6 +69,43 @@ class OrderControllerPrintTest extends TestCase
         $this->assertSame('pending', $job->pj_status);
     }
 
+    public function test_order_place_flashes_receipt_print_failed_in_direct_mode_when_printer_unreachable(): void
+    {
+        config(['printer.mode' => 'direct']);
+        // Deterministic, fast connection failure instead of dialing the
+        // real (unreachable, not-yet-connected) LAN printer IP.
+        config([
+            'printer.printers.cashier.enabled' => true,
+            'printer.printers.cashier.method' => 'network',
+            'printer.printers.cashier.network_ip' => '127.0.0.1',
+            'printer.printers.cashier.network_port' => 1,
+            'printer.connect_timeout' => 1,
+        ]);
+
+        $response = $this->actingAs($this->actor())->post(route('order.place'), $this->placeOrderPayload());
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('menu.menu'));
+        $response->assertSessionHas('success', 'Order placed successfully!');
+        $response->assertSessionHas('receipt_print_failed', true);
+    }
+
+    public function test_order_place_flashes_receipt_print_job_id_in_queue_mode(): void
+    {
+        config(['printer.mode' => 'queue']);
+
+        $before = Order::whereDate('created_at', today())->max('od_id') ?? 0;
+
+        $response = $this->actingAs($this->actor())->post(route('order.place'), $this->placeOrderPayload());
+
+        $order = Order::whereDate('created_at', today())->where('od_id', '>', $before)->first();
+        $job = PrintJob::where('od_id', $order->od_id)->where('pj_type', 'receipt')->first();
+
+        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('receipt_print_job_id', $job->pj_id);
+        $response->assertSessionHas('receipt_print_failed', false);
+    }
+
     public function test_order_place_still_succeeds_when_print_enqueue_throws(): void
     {
         config(['printer.mode' => 'queue']);
@@ -94,6 +131,7 @@ class OrderControllerPrintTest extends TestCase
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('menu.menu'));
         $response->assertSessionHas('success', 'Order placed successfully!');
+        $response->assertSessionHas('receipt_print_failed', true);
 
         $order = Order::whereDate('created_at', today())->where('od_id', '>', $before)->first();
         $this->assertNotNull($order, 'Order must still be created/committed even though print enqueue threw.');

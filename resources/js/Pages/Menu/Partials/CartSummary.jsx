@@ -43,6 +43,17 @@ export default function CartSummary({ products = [] }) {
                     setHasAutoPrinted(true);
                 }, 500);
             }
+
+            // Let the cashier know if the automatic receipt print didn't go
+            // through — the order itself always still succeeds regardless.
+            if (props.flash.receipt_print_failed) {
+                toast.error(
+                    "Receipt didn't print — the printer may be offline. The sale was still recorded; you may need to reprint manually.",
+                    { duration: 8000 },
+                );
+            } else if (props.flash.receipt_print_job_id) {
+                pollPrintJobs([props.flash.receipt_print_job_id], "receipt");
+            }
         }
     }, [props.flash]);
 
@@ -215,7 +226,7 @@ export default function CartSummary({ products = [] }) {
                     }
 
                     if (flash?.print_jobs?.length) {
-                        pollPrintJobs(flash.print_jobs);
+                        pollPrintJobs(flash.print_jobs, "kitchen ticket");
                     }
                 },
                 onError: (errors) => {
@@ -229,16 +240,17 @@ export default function CartSummary({ products = [] }) {
         );
     };
 
-    // Polls the print-jobs status endpoint for queued kitchen tickets
+    // Polls the print-jobs status endpoint for a queued print job
     // (PRINTER_MODE=queue, e.g. the VPS deployment) every ~2s, showing a
     // toast per job as it moves through queued -> printing -> printed/failed.
     // Stops once every job has reached a terminal state or after ~30s.
-    const pollPrintJobs = (jobIds) => {
+    // `label` (e.g. "kitchen ticket" or "receipt") only affects toast text.
+    const pollPrintJobs = (jobIds, label = "kitchen ticket") => {
         const toastId = `print-jobs-${jobIds.join("-")}`;
         const startedAt = Date.now();
         const seenTerminal = new Set();
 
-        toast.loading("Sending kitchen ticket to printer...", {
+        toast.loading(`Sending ${label} to printer...`, {
             id: toastId,
         });
 
@@ -278,7 +290,7 @@ export default function CartSummary({ products = [] }) {
                             );
                             toast.error(
                                 failedJob?.pj_error ||
-                                    "Kitchen ticket failed to print.",
+                                    `${label.charAt(0).toUpperCase()}${label.slice(1)} failed to print.`,
                                 {
                                     id: toastId,
                                     action: {
@@ -307,12 +319,13 @@ export default function CartSummary({ products = [] }) {
                                 { id: toastId },
                             );
                         } else {
-                            toast.success("Kitchen ticket printed.", {
-                                id: toastId,
-                            });
+                            toast.success(
+                                `${label.charAt(0).toUpperCase()}${label.slice(1)} printed.`,
+                                { id: toastId },
+                            );
                         }
                     } else {
-                        toast.loading("Printing kitchen ticket...", {
+                        toast.loading(`Printing ${label}...`, {
                             id: toastId,
                         });
                     }
